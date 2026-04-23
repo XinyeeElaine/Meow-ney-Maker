@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #000000; /* Changed to White */
+            background-color: #ffffff;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -218,7 +218,7 @@
 
         .stat-box span {
             display: block;
-            font-size: 1.2em; /* slightly smaller so the text fits nicely */
+            font-size: 1.2em; 
             font-weight: bold;
             color: #11998e;
         }
@@ -242,6 +242,7 @@
         .history-item {
             display: flex;
             justify-content: space-between;
+            align-items: center; 
             padding: 10px;
             border-bottom: 1px solid #eee;
             font-size: 0.9em;
@@ -249,13 +250,28 @@
         .history-item:last-child {
             border-bottom: none;
         }
+
+        /* Delete Button Styling */
+        .delete-btn {
+            background: transparent;
+            border: none;
+            color: #ff6b6b;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-left: 10px;
+            transition: transform 0.2s;
+        }
+
+        .delete-btn:hover {
+            transform: scale(1.3);
+        }
         
         .button-group {
             display: flex;
             justify-content: center;
         }
 
-.dj-cat {
+        .dj-cat {
             width: 200px;
             border-radius: 15px;
             margin: 15px auto;
@@ -268,7 +284,165 @@
             0%, 100% { transform: translateY(0px) rotate(-2deg); }
             50% { transform: translateY(-10px) rotate(2deg); }
         }
+        /* ==========================================
+           DARK MODE STYLES
+           ========================================== */
+        body.dark-mode {
+            background-color: #121212;
+            color: #ffffff;
+        }
+        body.dark-mode .container {
+            background: #1e1e1e;
+            border-color: #333;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+        }
+        body.dark-mode h1, body.dark-mode h2, body.dark-mode p, body.dark-mode label, body.dark-mode .time-display, body.dark-mode .money-display {
+            color: #ffffff;
+        }
+        body.dark-mode input {
+            background-color: #2d2d2d;
+            color: #ffffff;
+            border-color: #444;
+        }
+        body.dark-mode .history-item {
+            background: #2d2d2d;
+            border-color: #444;
+        }
+        body.dark-mode .history-item strong {
+            color: #ab93ff;
+        }
+        body.dark-mode #historyList p {
+            color: #bbb !important; /* Lighter grey for empty history text */
+        }
+        body.dark-mode .settings-box {
+            border-color: #444 !important;
+        }
+        /* Fix for the white boxes in Dark Mode */
+        body.dark-mode .history-stats,
+        body.dark-mode .result-details {
+            background: #2d2d2d; /* Changes the light box to dark gray */
+            border: 1px solid #444; /* Adds a subtle dark border */
+        }
 
+        /* Ensure the text inside those boxes stays readable */
+        body.dark-mode .result-details p,
+        body.dark-mode .stat-box p {
+            color: #eeeeee; 
+        }
+
+        /* Keep the teal color popping for the numbers in dark mode */
+        body.dark-mode .stat-box span {
+            color: #38ef7d; 
+        }
+
+        /* ==========================================
+           TOGGLE SWITCH STYLES
+           ========================================== */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+        }
+        input:checked + .slider {
+            background-color: #ab93ff;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .slider.round {
+            border-radius: 34px;
+        }
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+        /* ==========================================
+            MODAL / POP-UP STYLES
+        ========================================== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none; 
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #fafaf0;
+            padding: 30px;
+            border-radius: 20px;
+            border: 2px solid #f0f0e6;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            position: relative;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #555;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: #eb3349;
+        }
+
+        .settings-box {
+            margin: 20px 0;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 15px; 
+            border: 1px solid #e0d4ff;
+            border-radius: 10px;
+        }
+
+        /* Dark Mode support for Modal */
+        body.dark-mode .modal-content {
+            background: #1e1e1e;
+            border-color: #333;
+        }
+        body.dark-mode .close-btn {
+            color: #bbb;
+        }
+        body.dark-mode .close-btn:hover {
+            color: #ff6b6b;
+        }
     </style>
 </head>
 <body>
@@ -278,28 +452,34 @@
 
             <div class="input-group">
                 <label>💵 Salary (RM)</label>
-                <input type="number" id="salary" placeholder="E.g: 10000" value="1200">
+                <input type="number" id="salary" placeholder="E.g: 1500">
             </div>
 
             <div class="input-group">
                 <label>⏰ Working Hours</label>
-                <input type="number" id="hoursPerDay" placeholder="E.g: 8" value="8.5">
+                <input type="number" id="hoursPerDay" placeholder="E.g: 8">
             </div>
 
             <div class="input-group">
                 <label>📅 Working Days</label>
-                <input type="number" id="daysPerMonth" placeholder="E.g: 22" value="31">
+                <input type="number" id="daysPerMonth" placeholder="E.g: 26">
             </div>
 
             <button class="btn btn-start" onclick="startWork()">Welcome to HELL✨</button>
-            <button class="btn btn-history" style="width: 100%; margin-top: 0;" onclick="viewHistory()">📊 View History</button>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn btn-history" onclick="viewHistory()" style="flex: 1; margin-top: 0;">📜 View History</button>
+                <button class="btn btn-history" onclick="openSettings()" style="flex: 1; margin-top: 0;">⚙️ Settings</button>
+            </div>
+
         </div>
 
         <div id="timerScreen" class="timer-screen">
+
+
             <h1>努力搬砖中... 🧱</h1>
             
             <div class="cat-container working" id="workingCat">
-                <img src="https://cataas.com/cat/cute" alt="可爱的猫咪" id="catImage">
+                <img src="https://cataas.com/cat/cute" alt="MiaOOO" id="catImage">
             </div>
 
             <div class="money-display" id="moneyDisplay">0.0000</div>
@@ -325,8 +505,8 @@
             </div>
 
             <div class="button-group">
-                <button class="btn btn-reset" onclick="resetTimer()">Bye</button>
-                <button class="btn btn-history" onclick="viewHistory()">📊 View History</button>
+                <button class="btn btn-reset" onclick="resetTimer()">RuNnnN</button>
+                <button class="btn btn-history" onclick="viewHistory()">View History 📊</button>
             </div>
         </div>
 
@@ -352,9 +532,23 @@
                 </div> 
             
             <button class="btn btn-reset" onclick="goHomeFromHistory()" style="width: 100%">Back</button> 
-            <button class="btn btn-stop" onclick="clearHistory()" style="width: 100%; margin-top: 10px;">Clear History</button> 
+            <button id="clearAllBtn" class="btn btn-stop" onclick="clearHistory()" style="width: 100%; margin-top: 10px;">Clear All History</button> 
         </div>
 
+        <div id="settingsModal" class="modal-overlay">
+            <div class="modal-content">
+                <span class="close-btn" onclick="closeSettings()">&times;</span>
+                <h2>⚙️ Settings</h2>
+                
+                <div class="settings-box">
+                    <span style="font-size: 16px; font-weight: bold;">🌙 Dark Mode</span>
+                    <label class="switch">
+                        <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
 
     <script>
         let timerInterval;
@@ -372,10 +566,14 @@
                 return;
             }
 
+            // Save these inputs to the browser's memory
+            localStorage.setItem('savedSalary', salary);
+            localStorage.setItem('savedHours', hoursPerDay);
+            localStorage.setItem('savedDays', daysPerMonth);
+
             // Calculate rate per second
             const totalWorkSecondsPerMonth = daysPerMonth * hoursPerDay * 3600;
             ratePerSecond = salary / totalWorkSecondsPerMonth;
-           // document.getElementById('ratePerSecond').textContent = ratePerSecond.toFixed(6);
 
             // Switch screens
             document.getElementById('inputScreen').style.display = 'none';
@@ -386,6 +584,28 @@
             totalEarned = 0;
 
             timerInterval = setInterval(updateTimer, 100); 
+        }
+
+        // Settings & Dark Mode Functions
+        function openSettings() {
+            document.getElementById('inputScreen').style.display = 'none';
+            document.getElementById('settingsScreen').style.display = 'block';
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsScreen').style.display = 'none';
+            document.getElementById('inputScreen').style.display = 'block';
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.getElementById('darkModeToggle').checked;
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark'); // Save preference
+            } else {
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light'); // Save preference
+            }
         }
 
         function updateTimer() {
@@ -420,7 +640,7 @@
             document.getElementById('resultRate').textContent = ratePerSecond.toFixed(6);
             document.getElementById('resultEarned').textContent = totalEarned.toFixed(2);
 
-            // NEW: Save data to LocalStorage
+            // Save data to LocalStorage
             saveWorkSession(elapsed, totalEarned);
         }
 
@@ -430,23 +650,18 @@
             totalEarned = 0;
         }
 
-        // --- NEW FEATURES: History & Data Saving ---
-
         function saveWorkSession(durationSeconds, earnedAmount) {
-            // Retrieve existing history from local storage (or create an empty array if none exists)
             let history = JSON.parse(localStorage.getItem('workHistory')) || [];
             
             const today = new Date();
             const dateString = `${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
 
-            // Push new session
             history.push({
                 date: dateString,
                 duration: durationSeconds,
                 earned: earnedAmount
             });
 
-            // Save back to local storage
             localStorage.setItem('workHistory', JSON.stringify(history));
         }
 
@@ -462,20 +677,25 @@
             let uniqueDays = new Set();
             let historyHtml = '';
 
-            // Reverse to show the newest entries at the top
-            history.slice().reverse().forEach((session) => {
+            // Reverse to show the newest entries at the top, and track the ORIGINAL index for deleting
+            history.slice().reverse().forEach((session, reversedIndex) => {
                 totalSecs += session.duration;
                 totalMoney += session.earned;
                 uniqueDays.add(session.date);
 
                 const h = Math.floor(session.duration / 3600);
                 const m = Math.floor((session.duration % 3600) / 60);
+                
+                // Math to find the correct index in the un-reversed array
+                const originalIndex = history.length - 1 - reversedIndex;
 
+                // Added the Delete Button
                 historyHtml += `
                     <div class="history-item">
-                        <span>📅 ${session.date}</span>
-                        <span>⏱️ ${h}h ${m}m</span>
-                        <span style="color:#11998e; font-weight:bold;">RM ${session.earned.toFixed(4)}</span>
+                        <span style="flex: 1;">📅 ${session.date}</span>
+                        <span style="flex: 1; text-align: center;">⏱️ ${h}h ${m}m</span>
+                        <span style="flex: 1; text-align: right; color:#11998e; font-weight:bold;">RM ${session.earned.toFixed(4)}</span>
+                        <button class="delete-btn" onclick="deleteRecord(${originalIndex})" title="Delete this shift">❌</button>
                     </div>
                 `;
             });
@@ -483,7 +703,6 @@
             // Update the top stats boxes
             document.getElementById('totalDays').textContent = uniqueDays.size;
             
-            // NEW: Calculate exact hours and minutes for the total
             const totalH = Math.floor(totalSecs / 3600);
             const totalM = Math.floor((totalSecs % 3600) / 60);
             document.getElementById('totalHours').textContent = `${totalH}h ${totalM}m`;
@@ -492,10 +711,14 @@
 
             // Populate the list
             const listContainer = document.getElementById('historyList');
+            const clearAllBtn = document.getElementById('clearAllBtn'); // Find the button
+
             if(historyHtml === '') {
-                listContainer.innerHTML = '<p style="text-align:center; padding: 20px; color: #666;">暂无工作记录 (No history yet)</p>';
+                listContainer.innerHTML = '<p style="text-align:center; padding: 20px; color: #666;">No history yet</p>';
+                clearAllBtn.style.display = 'none'; // Hide the clear button if empty
             } else {
                 listContainer.innerHTML = historyHtml;
+                clearAllBtn.style.display = 'block'; // Show the clear button if there is history
             }
         }
 
@@ -504,19 +727,44 @@
             document.getElementById('inputScreen').style.display = 'block';
         }
 
-function clearHistory() {
-            // Ask for confirmation before deleting
-            if (confirm("Are you sure you want to clear all history?")) {
-                // This removes the data from your browser's storage
+        function clearHistory() {
+            if (confirm("Are you sure you want to clear ALL history?")) {
                 localStorage.removeItem('workHistory');
-                
-                // Refresh the history screen to show it's empty
                 viewHistory(); 
             }
         }
 
-// ==========================================
-        // ✨ GLITTER BACKGROUND EFFECT ✨
+        // Function to delete a single specific record
+        function deleteRecord(index) {
+            if (confirm("Are you sure you want to delete this specific shift?")) {
+                let history = JSON.parse(localStorage.getItem('workHistory')) || [];
+                
+                // Remove the 1 item at the specific index
+                history.splice(index, 1);
+                
+                // Save the updated list back to the browser
+                localStorage.setItem('workHistory', JSON.stringify(history));
+                
+                // Refresh the screen so the numbers and list update instantly
+                viewHistory();
+            }
+        }
+        
+        // ==========================================
+        //  GLITTER BACKGROUND EFFECT 
+        // ==========================================
+        function openSettings() {
+            // Show the modal
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        function closeSettings() {
+            // Hide the modal
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        // ==========================================
+        //  GLITTER BACKGROUND EFFECT 
         // ==========================================
         const canvas = document.createElement('canvas');
         canvas.style.position = 'fixed';
@@ -524,8 +772,8 @@ function clearHistory() {
         canvas.style.left = '0';
         canvas.style.width = '100vw';
         canvas.style.height = '100vh';
-        canvas.style.zIndex = '-1'; // Keeps it behind your white box
-        canvas.style.pointerEvents = 'none'; // Prevents it from blocking button clicks
+        canvas.style.zIndex = '-1'; 
+        canvas.style.pointerEvents = 'none'; 
         document.body.appendChild(canvas);
 
         const ctx = canvas.getContext('2d');
@@ -542,9 +790,9 @@ function clearHistory() {
             constructor() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2.5 + 0.5; // Size of glitter particles
-                this.speedX = Math.random() * 0.8 - 0.4; // Drift speed horizontally
-                this.speedY = Math.random() * 0.8 - 0.4; // Drift speed vertically
+                this.size = Math.random() * 2.5 + 0.5; 
+                this.speedX = Math.random() * 0.8 - 0.4; 
+                this.speedY = Math.random() * 0.8 - 0.4; 
                 this.opacity = Math.random();
                 this.fadeDirection = Math.random() < 0.5 ? 1 : -1;
             }
@@ -552,19 +800,16 @@ function clearHistory() {
                 this.x += this.speedX;
                 this.y += this.speedY;
 
-                // Twinkling effect
                 this.opacity += 0.015 * this.fadeDirection;
                 if (this.opacity >= 1) this.fadeDirection = -1;
                 if (this.opacity <= 0.1) this.fadeDirection = 1;
 
-                // Wrap around the screen so they never run out
                 if (this.x < 0) this.x = canvas.width;
                 if (this.x > canvas.width) this.x = 0;
                 if (this.y < 0) this.y = canvas.height;
                 if (this.y > canvas.height) this.y = 0;
             }
             draw() {
-                // Light purple color with dynamic opacity
                 ctx.fillStyle = `rgba(247, 240, 12, ${this.opacity})`; 
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
@@ -574,7 +819,6 @@ function clearHistory() {
 
         function initGlitter() {
             particlesArray = [];
-            // Change the number 150 to add more or less glitter
             for (let i = 0; i < 150; i++) {
                 particlesArray.push(new Particle());
             }
@@ -591,6 +835,29 @@ function clearHistory() {
 
         initGlitter();
         animateGlitter();
-    </script>
+
+        // ==========================================
+        //  AUTO-LOAD SAVED INPUTS 
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            // Load saved inputs
+            if (localStorage.getItem('savedSalary')) {
+                document.getElementById('salary').value = localStorage.getItem('savedSalary');
+            }
+            if (localStorage.getItem('savedHours')) {
+                document.getElementById('hoursPerDay').value = localStorage.getItem('savedHours');
+            }
+            if (localStorage.getItem('savedDays')) {
+                document.getElementById('daysPerMonth').value = localStorage.getItem('savedDays');
+            }
+
+            // Load Dark Mode preference
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('darkModeToggle').checked = true;
+            }
+        });
+
+</script>
 </body>
 </html>
