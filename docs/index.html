@@ -444,9 +444,56 @@
             color: #ff6b6b;
         }
     </style>
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Config (optional - for local development, not in git) -->
+    <script src="config.js" onerror="window.configLoadFailed = true;"></script>
 </head>
 <body>
     <div class="container">
+        <!-- Auth Screen -->
+        <div id="authScreen" class="screen" style="display: none;">
+            <h1>Login / Sign Up 🐱</h1>
+
+            <div id="loginForm" class="auth-form">
+                <div class="input-group">
+                    <label>📧 Email</label>
+                    <input type="email" id="loginEmail" placeholder="your@email.com">
+                </div>
+                <div class="input-group">
+                    <label>🔒 Password</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••">
+                </div>
+                <button class="btn btn-start" onclick="handleLogin()">Login</button>
+                <p style="margin-top: 15px;">
+                    Don't have an account?
+                    <a href="#" onclick="showSignupForm()" style="color: #667eea;">Sign Up</a>
+                </p>
+            </div>
+
+            <div id="signupForm" class="auth-form" style="display: none;">
+                <div class="input-group">
+                    <label>📧 Email</label>
+                    <input type="email" id="signupEmail" placeholder="your@email.com">
+                </div>
+                <div class="input-group">
+                    <label>🔒 Password</label>
+                    <input type="password" id="signupPassword" placeholder="••••••••">
+                </div>
+                <button class="btn btn-start" onclick="handleSignup()">Sign Up</button>
+                <p style="margin-top: 15px;">
+                    Already have an account?
+                    <a href="#" onclick="showLoginForm()" style="color: #667eea;">Login</a>
+                </p>
+            </div>
+
+            <button class="btn" onclick="showMainApp()" style="margin-top: 20px; background: #6c757d; width: 100%;">
+                Continue as Guest
+            </button>
+
+            <div id="authMessage" style="margin-top: 15px; color: #eb3349;"></div>
+        </div>
+
         <div id="inputScreen" class="input-screen">
             <h1>Gimme Meow-ney /ᐠ - ˕ -マ</h1>
 
@@ -539,7 +586,7 @@
             <div class="modal-content">
                 <span class="close-btn" onclick="closeSettings()">&times;</span>
                 <h2>⚙️ Settings</h2>
-                
+
                 <div class="settings-box">
                     <span style="font-size: 16px; font-weight: bold;">🌙 Dark Mode</span>
                     <label class="switch">
@@ -547,10 +594,347 @@
                         <span class="slider round"></span>
                     </label>
                 </div>
+
+                <div class="settings-box" id="logoutSection" style="display: none;">
+                    <button class="btn btn-stop" onclick="handleLogout()" style="width: 100%; padding: 10px; font-size: 14px;">
+                        🚪 Logout
+                    </button>
+                </div>
             </div>
         </div>
 
     <script>
+        // ==========================================
+        //  SUPABASE CONFIGURATION
+        // ==========================================
+        // Load from config.js or use empty defaults (to be set via environment)
+        const SUPABASE_URL = window.SUPABASE_URL || '';
+        const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || '';
+
+        let supabaseClient = null;
+        let currentUser = null;
+        let isUserAuthenticated = false;
+
+        // Initialize Supabase if credentials are available
+        if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+
+        // ==========================================
+        //  AUTHENTICATION FUNCTIONS
+        // ==========================================
+        async function handleLogin() {
+            if (!supabaseClient) {
+                document.getElementById('authMessage').textContent = 'Supabase not configured. Please contact administrator.';
+                return;
+            }
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const messageDiv = document.getElementById('authMessage');
+
+            if (!email || !password) {
+                messageDiv.textContent = 'Please fill in all fields';
+                return;
+            }
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) throw error;
+
+                currentUser = data.user;
+                isUserAuthenticated = true;
+                await loadUserData();
+                showMainApp();
+
+            } catch (error) {
+                messageDiv.textContent = error.message;
+            }
+        }
+
+        async function handleSignup() {
+            if (!supabaseClient) {
+                document.getElementById('authMessage').textContent = 'Supabase not configured. Please contact administrator.';
+                return;
+            }
+
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const messageDiv = document.getElementById('authMessage');
+
+            if (!email || !password) {
+                messageDiv.textContent = 'Please fill in all fields';
+                return;
+            }
+
+            if (password.length < 6) {
+                messageDiv.textContent = 'Password must be at least 6 characters';
+                return;
+            }
+
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password
+                });
+
+                if (error) throw error;
+
+                // Create default preferences
+                await supabaseClient
+                    .from('user_preferences')
+                    .insert([{
+                        user_id: data.user.id,
+                        salary: 0,
+                        hours_per_day: 8,
+                        days_per_month: 26,
+                        theme: 'light'
+                    }]);
+
+                currentUser = data.user;
+                isUserAuthenticated = true;
+                await loadUserData();
+                showMainApp();
+
+            } catch (error) {
+                messageDiv.textContent = error.message;
+            }
+        }
+
+        async function handleLogout() {
+            if (supabaseClient) {
+                await supabaseClient.auth.signOut();
+            }
+            currentUser = null;
+            isUserAuthenticated = false;
+            location.reload();
+        }
+
+        function showLoginForm() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('signupForm').style.display = 'none';
+            document.getElementById('authMessage').textContent = '';
+        }
+
+        function showSignupForm() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('signupForm').style.display = 'block';
+            document.getElementById('authMessage').textContent = '';
+        }
+
+        function showMainApp() {
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('inputScreen').style.display = 'block';
+            // Show logout button if authenticated
+            if (isUserAuthenticated) {
+                document.getElementById('logoutSection').style.display = 'block';
+            }
+        }
+
+        async function checkAuthState() {
+            if (!supabaseClient) {
+                // Supabase not configured, show auth screen with message
+                document.getElementById('authScreen').style.display = 'block';
+                return;
+            }
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+
+            if (session) {
+                currentUser = session.user;
+                isUserAuthenticated = true;
+                await loadUserData();
+                showMainApp();
+            } else {
+                document.getElementById('authScreen').style.display = 'block';
+            }
+        }
+
+        // ==========================================
+        //  SUPABASE DATA FUNCTIONS
+        // ==========================================
+        async function loadUserData() {
+            if (!supabaseClient || !currentUser) return;
+
+            try {
+                const { data: prefs } = await supabaseClient
+                    .from('user_preferences')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .maybeSingle();
+
+                if (prefs && prefs.salary > 0) {
+                    document.getElementById('salary').value = prefs.salary || '';
+                    document.getElementById('hoursPerDay').value = prefs.hours_per_day || '';
+                    document.getElementById('daysPerMonth').value = prefs.days_per_month || '';
+                }
+
+                if (prefs && prefs.theme === 'dark') {
+                    document.body.classList.add('dark-mode');
+                    document.getElementById('darkModeToggle').checked = true;
+                }
+
+                // Query all and filter in JS to avoid 406 error
+                const { data: allActiveSessions } = await supabaseClient
+                    .from('active_sessions')
+                    .select('*');
+
+                const activeSession = allActiveSessions?.find(s => s.user_id === currentUser.id);
+
+                if (activeSession) {
+                    startTime = new Date(activeSession.start_time).getTime();
+                    ratePerSecond = activeSession.rate_per_second;
+
+                    document.getElementById('inputScreen').style.display = 'none';
+                    document.getElementById('timerScreen').style.display = 'block';
+
+                    timerInterval = setInterval(updateTimer, 100);
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+
+        async function saveUserPreferences(salary, hours, days) {
+            if (!supabaseClient || !currentUser) return;
+
+            try {
+                await supabaseClient
+                    .from('user_preferences')
+                    .upsert({
+                        user_id: currentUser.id,
+                        salary: salary,
+                        hours_per_day: hours,
+                        days_per_month: days,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id' });
+            } catch (error) {
+                console.error('Error saving preferences:', error);
+            }
+        }
+
+        async function saveWorkSessionToSupabase(durationSeconds, earnedAmount) {
+            if (!supabaseClient || !currentUser) return;
+
+            try {
+                const today = new Date();
+                const dateString = `${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+
+                await supabaseClient
+                    .from('work_sessions')
+                    .insert([{
+                        user_id: currentUser.id,
+                        start_time: new Date(startTime).toISOString(),
+                        end_time: new Date().toISOString(),
+                        duration_seconds: Math.floor(durationSeconds),
+                        rate_per_second: ratePerSecond,
+                        amount_earned: earnedAmount,
+                        session_date: dateString
+                    }]);
+            } catch (error) {
+                console.error('Error saving work session:', error);
+            }
+        }
+
+        async function saveActiveSessionToSupabase() {
+            if (!supabaseClient || !currentUser) return;
+
+            try {
+                await supabaseClient
+                    .from('active_sessions')
+                    .upsert({
+                        user_id: currentUser.id,
+                        start_time: new Date(startTime).toISOString(),
+                        rate_per_second: ratePerSecond
+                    }, { onConflict: 'user_id' });
+            } catch (error) {
+                console.error('Error saving active session:', error);
+            }
+        }
+
+        async function clearActiveSessionFromSupabase() {
+            if (!supabaseClient || !currentUser) return;
+
+            try {
+                await supabaseClient
+                    .from('active_sessions')
+                    .delete()
+                    .eq('user_id', currentUser.id);
+            } catch (error) {
+                console.error('Error clearing active session:', error);
+            }
+        }
+
+        async function loadWorkSessionsFromSupabase() {
+            if (!supabaseClient || !currentUser) return [];
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('work_sessions')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                return data.map(session => ({
+                    date: session.session_date,
+                    duration: session.duration_seconds,
+                    earned: session.amount_earned,
+                    id: session.id
+                }));
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                return [];
+            }
+        }
+
+        async function deleteWorkSessionFromSupabase(sessionId) {
+            if (!supabaseClient || !currentUser) return;
+
+            try {
+                await supabaseClient
+                    .from('work_sessions')
+                    .delete()
+                    .eq('id', sessionId);
+            } catch (error) {
+                console.error('Error deleting session:', error);
+            }
+        }
+
+        async function clearAllWorkSessionsFromSupabase() {
+            if (!supabaseClient || !currentUser) return;
+
+            try {
+                await supabaseClient
+                    .from('work_sessions')
+                    .delete()
+                    .eq('user_id', currentUser.id);
+            } catch (error) {
+                console.error('Error clearing sessions:', error);
+            }
+        }
+
+        async function saveThemeToSupabase(theme) {
+            if (!supabaseClient || !currentUser) return;
+
+            try {
+                await supabaseClient
+                    .from('user_preferences')
+                    .update({ theme: theme, updated_at: new Date().toISOString() })
+                    .eq('user_id', currentUser.id);
+            } catch (error) {
+                console.error('Error saving theme:', error);
+            }
+        }
+
+        // ==========================================
+        //  ORIGINAL APP VARIABLES
+        // ==========================================
         let timerInterval;
         let startTime;
         let ratePerSecond;
@@ -566,10 +950,14 @@
                 return;
             }
 
-            // Save these inputs to the browser's memory
-            localStorage.setItem('savedSalary', salary);
-            localStorage.setItem('savedHours', hoursPerDay);
-            localStorage.setItem('savedDays', daysPerMonth);
+            // Save these inputs to the browser's memory (fallback) or Supabase
+            if (isUserAuthenticated) {
+                saveUserPreferences(salary, hoursPerDay, daysPerMonth);
+            } else {
+                localStorage.setItem('savedSalary', salary);
+                localStorage.setItem('savedHours', hoursPerDay);
+                localStorage.setItem('savedDays', daysPerMonth);
+            }
 
             // Calculate rate per second
             const totalWorkSecondsPerMonth = daysPerMonth * hoursPerDay * 3600;
@@ -583,28 +971,44 @@
             startTime = Date.now();
             totalEarned = 0;
 
-            timerInterval = setInterval(updateTimer, 100); 
+            timerInterval = setInterval(updateTimer, 100);
+
+            // Save the active session so it survives a refresh!
+            if (isUserAuthenticated) {
+                saveActiveSessionToSupabase();
+            } else {
+                localStorage.setItem('activeStartTime', startTime);
+                localStorage.setItem('activeRate', ratePerSecond);
+                localStorage.setItem('isWorking', 'true');
+            }
         }
 
         // Settings & Dark Mode Functions
         function openSettings() {
-            document.getElementById('inputScreen').style.display = 'none';
-            document.getElementById('settingsScreen').style.display = 'block';
+            // Show the modal
+            document.getElementById('settingsModal').style.display = 'flex';
         }
 
         function closeSettings() {
-            document.getElementById('settingsScreen').style.display = 'none';
-            document.getElementById('inputScreen').style.display = 'block';
+            // Hide the modal
+            document.getElementById('settingsModal').style.display = 'none';
         }
 
-        function toggleDarkMode() {
+        async function toggleDarkMode() {
             const isDark = document.getElementById('darkModeToggle').checked;
+            const theme = isDark ? 'dark' : 'light';
+
             if (isDark) {
                 document.body.classList.add('dark-mode');
-                localStorage.setItem('theme', 'dark'); // Save preference
             } else {
                 document.body.classList.remove('dark-mode');
-                localStorage.setItem('theme', 'light'); // Save preference
+            }
+
+            // Save preference
+            if (isUserAuthenticated) {
+                await saveThemeToSupabase(theme);
+            } else {
+                localStorage.setItem('theme', theme);
             }
         }
 
@@ -623,13 +1027,23 @@
                 `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
 
-        function stopWork() {
+        async function stopWork() {
             clearInterval(timerInterval);
+
+            // Clear the active session status
+            if (isUserAuthenticated) {
+                await clearActiveSessionFromSupabase();
+            } else {
+                localStorage.removeItem('activeStartTime');
+                localStorage.removeItem('activeRate');
+                localStorage.removeItem('isWorking');
+            }
+
             const elapsed = (Date.now() - startTime) / 1000;
             const hours = Math.floor(elapsed / 3600);
             const minutes = Math.floor((elapsed % 3600) / 60);
             const seconds = Math.floor(elapsed % 60);
-            
+
             // Switch to result screen
             document.getElementById('timerScreen').style.display = 'none';
             document.getElementById('resultScreen').style.display = 'block';
@@ -640,14 +1054,27 @@
             document.getElementById('resultRate').textContent = ratePerSecond.toFixed(6);
             document.getElementById('resultEarned').textContent = totalEarned.toFixed(2);
 
-            // Save data to LocalStorage
-            saveWorkSession(elapsed, totalEarned);
+            // Save data
+            if (isUserAuthenticated) {
+                await saveWorkSessionToSupabase(elapsed, totalEarned);
+            } else {
+                saveWorkSession(elapsed, totalEarned);
+            }
         }
 
-        function resetTimer() {
+        async function resetTimer() {
             document.getElementById('resultScreen').style.display = 'none';
             document.getElementById('inputScreen').style.display = 'block';
             totalEarned = 0;
+
+            // Ensure memory is cleared if they reset
+            if (isUserAuthenticated) {
+                await clearActiveSessionFromSupabase();
+            } else {
+                localStorage.removeItem('activeStartTime');
+                localStorage.removeItem('activeRate');
+                localStorage.removeItem('isWorking');
+            }
         }
 
         function saveWorkSession(durationSeconds, earnedAmount) {
@@ -665,19 +1092,25 @@
             localStorage.setItem('workHistory', JSON.stringify(history));
         }
 
-        function viewHistory() {
+        async function viewHistory() {
             document.getElementById('inputScreen').style.display = 'none';
             document.getElementById('resultScreen').style.display = 'none';
             document.getElementById('historyScreen').style.display = 'block';
 
-            let history = JSON.parse(localStorage.getItem('workHistory')) || [];
-            
+            let history = [];
+
+            if (isUserAuthenticated) {
+                history = await loadWorkSessionsFromSupabase();
+            } else {
+                history = JSON.parse(localStorage.getItem('workHistory')) || [];
+            }
+
             let totalSecs = 0;
             let totalMoney = 0;
             let uniqueDays = new Set();
             let historyHtml = '';
 
-            // Reverse to show the newest entries at the top, and track the ORIGINAL index for deleting
+            // Reverse to show the newest entries at the top
             history.slice().reverse().forEach((session, reversedIndex) => {
                 totalSecs += session.duration;
                 totalMoney += session.earned;
@@ -685,40 +1118,39 @@
 
                 const h = Math.floor(session.duration / 3600);
                 const m = Math.floor((session.duration % 3600) / 60);
-                
-                // Math to find the correct index in the un-reversed array
-                const originalIndex = history.length - 1 - reversedIndex;
 
-                // Added the Delete Button
+                // For Supabase, use session.id; for localStorage, use original index
+                const deleteParam = isUserAuthenticated ? `'${session.id}'` : history.length - 1 - reversedIndex;
+
                 historyHtml += `
                     <div class="history-item">
                         <span style="flex: 1;">📅 ${session.date}</span>
                         <span style="flex: 1; text-align: center;">⏱️ ${h}h ${m}m</span>
                         <span style="flex: 1; text-align: right; color:#11998e; font-weight:bold;">RM ${session.earned.toFixed(4)}</span>
-                        <button class="delete-btn" onclick="deleteRecord(${originalIndex})" title="Delete this shift">❌</button>
+                        <button class="delete-btn" onclick="deleteRecord(${deleteParam})" title="Delete this shift">❌</button>
                     </div>
                 `;
             });
 
             // Update the top stats boxes
             document.getElementById('totalDays').textContent = uniqueDays.size;
-            
+
             const totalH = Math.floor(totalSecs / 3600);
             const totalM = Math.floor((totalSecs % 3600) / 60);
             document.getElementById('totalHours').textContent = `${totalH}h ${totalM}m`;
-            
+
             document.getElementById('totalMoney').textContent = totalMoney.toFixed(4);
 
             // Populate the list
             const listContainer = document.getElementById('historyList');
-            const clearAllBtn = document.getElementById('clearAllBtn'); // Find the button
+            const clearAllBtn = document.getElementById('clearAllBtn');
 
             if(historyHtml === '') {
                 listContainer.innerHTML = '<p style="text-align:center; padding: 20px; color: #666;">No history yet</p>';
-                clearAllBtn.style.display = 'none'; // Hide the clear button if empty
+                clearAllBtn.style.display = 'none';
             } else {
                 listContainer.innerHTML = historyHtml;
-                clearAllBtn.style.display = 'block'; // Show the clear button if there is history
+                clearAllBtn.style.display = 'block';
             }
         }
 
@@ -727,40 +1159,29 @@
             document.getElementById('inputScreen').style.display = 'block';
         }
 
-        function clearHistory() {
+        async function clearHistory() {
             if (confirm("Are you sure you want to clear ALL history?")) {
-                localStorage.removeItem('workHistory');
-                viewHistory(); 
+                if (isUserAuthenticated) {
+                    await clearAllWorkSessionsFromSupabase();
+                } else {
+                    localStorage.removeItem('workHistory');
+                }
+                viewHistory();
             }
         }
 
         // Function to delete a single specific record
-        function deleteRecord(index) {
+        async function deleteRecord(identifier) {
             if (confirm("Are you sure you want to delete this specific shift?")) {
-                let history = JSON.parse(localStorage.getItem('workHistory')) || [];
-                
-                // Remove the 1 item at the specific index
-                history.splice(index, 1);
-                
-                // Save the updated list back to the browser
-                localStorage.setItem('workHistory', JSON.stringify(history));
-                
-                // Refresh the screen so the numbers and list update instantly
+                if (isUserAuthenticated) {
+                    await deleteWorkSessionFromSupabase(identifier);
+                } else {
+                    let history = JSON.parse(localStorage.getItem('workHistory')) || [];
+                    history.splice(identifier, 1);
+                    localStorage.setItem('workHistory', JSON.stringify(history));
+                }
                 viewHistory();
             }
-        }
-        
-        // ==========================================
-        //  GLITTER BACKGROUND EFFECT 
-        // ==========================================
-        function openSettings() {
-            // Show the modal
-            document.getElementById('settingsModal').style.display = 'flex';
-        }
-
-        function closeSettings() {
-            // Hide the modal
-            document.getElementById('settingsModal').style.display = 'none';
         }
 
         // ==========================================
@@ -837,27 +1258,44 @@
         animateGlitter();
 
         // ==========================================
-        //  AUTO-LOAD SAVED INPUTS 
+        //  AUTO-LOAD SAVED INPUTS
         // ==========================================
-        window.addEventListener('DOMContentLoaded', () => {
-            // Load saved inputs
-            if (localStorage.getItem('savedSalary')) {
-                document.getElementById('salary').value = localStorage.getItem('savedSalary');
-            }
-            if (localStorage.getItem('savedHours')) {
-                document.getElementById('hoursPerDay').value = localStorage.getItem('savedHours');
-            }
-            if (localStorage.getItem('savedDays')) {
-                document.getElementById('daysPerMonth').value = localStorage.getItem('savedDays');
-            }
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Check authentication state first
+            await checkAuthState();
 
-            // Load Dark Mode preference
-            if (localStorage.getItem('theme') === 'dark') {
-                document.body.classList.add('dark-mode');
-                document.getElementById('darkModeToggle').checked = true;
-            }
-        });
+            // Only load localStorage data if not authenticated
+            if (!isUserAuthenticated) {
+                // Load saved inputs
+                if (localStorage.getItem('savedSalary')) {
+                    document.getElementById('salary').value = localStorage.getItem('savedSalary');
+                }
+                if (localStorage.getItem('savedHours')) {
+                    document.getElementById('hoursPerDay').value = localStorage.getItem('savedHours');
+                }
+                if (localStorage.getItem('savedDays')) {
+                    document.getElementById('daysPerMonth').value = localStorage.getItem('savedDays');
+                }
 
-</script>
+                // Load Dark Mode preference
+                if (localStorage.getItem('theme') === 'dark') {
+                    document.body.classList.add('dark-mode');
+                    document.getElementById('darkModeToggle').checked = true;
+                }
+
+                // Auto-resume if the browser refreshed while working!
+                if (localStorage.getItem('isWorking') === 'true') {
+                    startTime = parseInt(localStorage.getItem('activeStartTime'));
+                    ratePerSecond = parseFloat(localStorage.getItem('activeRate'));
+
+                    document.getElementById('inputScreen').style.display = 'none';
+                    document.getElementById('timerScreen').style.display = 'block';
+
+                    timerInterval = setInterval(updateTimer, 100);
+                }
+            }
+        }); 
+
+    </script>
 </body>
 </html>
