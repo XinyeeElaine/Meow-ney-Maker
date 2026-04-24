@@ -18,7 +18,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 70px 20px 20px 20px;
         }
 
         .container {
@@ -114,14 +114,36 @@
             box-shadow: 0 10px 20px rgba(17, 153, 142, 0.4);
         }
 
+        .btn-blue {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            width: 100%;
+            font-size: 18px;
+        }
+
+        .btn-blue:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.4);
+        }
+
         .btn-stop {
-            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            background: linear-gradient(135deg, #f46b45 0%, #eea849 100%);
             color: white;
             width: 100%;
             font-size: 18px;
         }
 
         .btn-stop:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(244, 107, 69, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+        }
+
+        .btn-danger:hover {
             transform: translateY(-3px);
             box-shadow: 0 10px 20px rgba(235, 51, 73, 0.4);
         }
@@ -380,6 +402,72 @@
         }
 
         /* ==========================================
+            TOP NAVIGATION STYLES
+        ========================================== */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(250, 250, 240, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid #f0f0e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 100;
+        }
+
+        body.dark-mode .top-nav {
+            background: rgba(30, 30, 30, 0.95);
+            border-bottom-color: #333;
+        }
+
+        .nav-left, .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .nav-btn-icon {
+            padding: 10px;
+            font-size: 24px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            background: transparent;
+            color: #667eea;
+            transition: all 0.3s;
+        }
+
+        .nav-btn-icon:hover {
+            transform: rotate(45deg) scale(1.1);
+        }
+
+        body.dark-mode .nav-btn-icon {
+            color: #ab93ff;
+        }
+
+        /* ==========================================
             MODAL / POP-UP STYLES
         ========================================== */
         .modal-overlay {
@@ -405,6 +493,10 @@
             position: relative;
             width: 90%;
             max-width: 400px;
+        }
+
+        .modal-small {
+            max-width: 350px;
         }
 
         .close-btn {
@@ -450,50 +542,16 @@
     <script src="config.js" onerror="window.configLoadFailed = true;"></script>
 </head>
 <body>
-    <div class="container">
-        <!-- Auth Screen -->
-        <div id="authScreen" class="screen" style="display: none;">
-            <h1>Login / Sign Up 🐱</h1>
-
-            <div id="loginForm" class="auth-form">
-                <div class="input-group">
-                    <label>📧 Email</label>
-                    <input type="email" id="loginEmail" placeholder="your@email.com">
-                </div>
-                <div class="input-group">
-                    <label>🔒 Password</label>
-                    <input type="password" id="loginPassword" placeholder="••••••••">
-                </div>
-                <button class="btn btn-start" onclick="handleLogin()">Login</button>
-                <p style="margin-top: 15px;">
-                    Don't have an account?
-                    <a href="#" onclick="showSignupForm()" style="color: #667eea;">Sign Up</a>
-                </p>
-            </div>
-
-            <div id="signupForm" class="auth-form" style="display: none;">
-                <div class="input-group">
-                    <label>📧 Email</label>
-                    <input type="email" id="signupEmail" placeholder="your@email.com">
-                </div>
-                <div class="input-group">
-                    <label>🔒 Password</label>
-                    <input type="password" id="signupPassword" placeholder="••••••••">
-                </div>
-                <button class="btn btn-start" onclick="handleSignup()">Sign Up</button>
-                <p style="margin-top: 15px;">
-                    Already have an account?
-                    <a href="#" onclick="showLoginForm()" style="color: #667eea;">Login</a>
-                </p>
-            </div>
-
-            <button class="btn" onclick="showMainApp()" style="margin-top: 20px; background: #6c757d; width: 100%;">
-                Continue as Guest
-            </button>
-
-            <div id="authMessage" style="margin-top: 15px; color: #eb3349;"></div>
+    <header class="top-nav">
+        <div class="nav-left"></div>
+        <div class="nav-right">
+            <button id="loginBtn" class="nav-btn" onclick="openLoginModal()" style="display: none;">🔐 Login</button>
+            <button id="logoutBtn" class="nav-btn" onclick="handleLogout()" style="display: none;">🚪 Logout</button>
+            <button class="nav-btn-icon" onclick="openSettings()">⚙️</button>
         </div>
+    </header>
 
+    <div class="container">
         <div id="inputScreen" class="input-screen">
             <h1>Gimme Meow-ney /ᐠ - ˕ -マ</h1>
 
@@ -513,10 +571,7 @@
             </div>
 
             <button class="btn btn-start" onclick="startWork()">Welcome to HELL✨</button>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button class="btn btn-history" onclick="viewHistory()" style="flex: 1; margin-top: 0;">📜 View History</button>
-                <button class="btn btn-history" onclick="openSettings()" style="flex: 1; margin-top: 0;">⚙️ Settings</button>
-            </div>
+            <button class="btn btn-blue" onclick="viewHistory()" style="width: 100%; font-size: 18px;">📜 View History</button>
 
         </div>
 
@@ -579,7 +634,7 @@
                 </div> 
             
             <button class="btn btn-reset" onclick="goHomeFromHistory()" style="width: 100%">Back</button> 
-            <button id="clearAllBtn" class="btn btn-stop" onclick="clearHistory()" style="width: 100%; margin-top: 10px;">Clear All History</button> 
+            <button id="clearAllBtn" class="btn btn-danger" onclick="clearHistory()" style="width: 100%; margin-top: 10px;">Clear All History</button> 
         </div>
 
         <div id="settingsModal" class="modal-overlay">
@@ -594,11 +649,47 @@
                         <span class="slider round"></span>
                     </label>
                 </div>
+            </div>
+        </div>
 
-                <div class="settings-box" id="logoutSection" style="display: none;">
-                    <button class="btn btn-stop" onclick="handleLogout()" style="width: 100%; padding: 10px; font-size: 14px;">
-                        🚪 Logout
-                    </button>
+        <div id="loginModal" class="modal-overlay">
+            <div class="modal-content modal-small">
+                <span class="close-btn" onclick="closeLoginModal()">&times;</span>
+
+                <!-- Login Form -->
+                <div id="loginFormInModal">
+                    <h2>🔐 Login</h2>
+                    <div class="input-group">
+                        <label>📧 Email</label>
+                        <input type="email" id="loginEmailModal" placeholder="your@email.com">
+                    </div>
+                    <div class="input-group">
+                        <label>🔒 Password</label>
+                        <input type="password" id="loginPasswordModal" placeholder="••••••••">
+                    </div>
+                    <button class="btn btn-start" onclick="handleLoginFromModal()">Login</button>
+                    <p style="margin-top: 15px;">
+                        Don't have an account?
+                        <a href="#" onclick="showSignupInModal()" style="color: #667eea;">Sign Up</a>
+                    </p>
+                </div>
+
+                <!-- Signup Form -->
+                <div id="signupFormInModal" style="display: none;">
+                    <h2>✨ Sign Up</h2>
+                    <div class="input-group">
+                        <label>📧 Email</label>
+                        <input type="email" id="signupEmailModal" placeholder="your@email.com">
+                    </div>
+                    <div class="input-group">
+                        <label>🔒 Password</label>
+                        <input type="password" id="signupPasswordModal" placeholder="••••••••">
+                    </div>
+                    <button class="btn btn-start" onclick="handleSignupFromModal()">Sign Up</button>
+                    <p style="margin-top: 15px;">
+                        Already have an account?
+                        <a href="#" onclick="showLoginInModal()" style="color: #667eea;">Login</a>
+                    </p>
                 </div>
             </div>
         </div>
@@ -623,18 +714,16 @@
         // ==========================================
         //  AUTHENTICATION FUNCTIONS
         // ==========================================
-        async function handleLogin() {
+        async function handleLoginWithEmailPassword(email, password, messageDiv = null) {
             if (!supabaseClient) {
-                document.getElementById('authMessage').textContent = 'Supabase not configured. Please contact administrator.';
+                if (messageDiv) messageDiv.textContent = 'Supabase not configured. Please contact administrator.';
+                else alert('Supabase not configured. Please contact administrator.');
                 return;
             }
 
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            const messageDiv = document.getElementById('authMessage');
-
             if (!email || !password) {
-                messageDiv.textContent = 'Please fill in all fields';
+                if (messageDiv) messageDiv.textContent = 'Please fill in all fields';
+                else alert('Please fill in all fields');
                 return;
             }
 
@@ -650,29 +739,44 @@
                 isUserAuthenticated = true;
                 await loadUserData();
                 showMainApp();
+                updateNavButtons();
+                closeLoginModal();
 
             } catch (error) {
-                messageDiv.textContent = error.message;
+                if (messageDiv) messageDiv.textContent = error.message;
+                else alert(error.message);
             }
         }
 
-        async function handleSignup() {
+        async function handleLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const messageDiv = document.getElementById('authMessage');
+            await handleLoginWithEmailPassword(email, password, messageDiv);
+        }
+
+        function handleLoginFromModal() {
+            const email = document.getElementById('loginEmailModal').value;
+            const password = document.getElementById('loginPasswordModal').value;
+            handleLoginWithEmailPassword(email, password, null);
+        }
+
+        async function handleSignupWithEmailPassword(email, password, messageDiv = null) {
             if (!supabaseClient) {
-                document.getElementById('authMessage').textContent = 'Supabase not configured. Please contact administrator.';
+                if (messageDiv) messageDiv.textContent = 'Supabase not configured. Please contact administrator.';
+                else alert('Supabase not configured. Please contact administrator.');
                 return;
             }
 
-            const email = document.getElementById('signupEmail').value;
-            const password = document.getElementById('signupPassword').value;
-            const messageDiv = document.getElementById('authMessage');
-
             if (!email || !password) {
-                messageDiv.textContent = 'Please fill in all fields';
+                if (messageDiv) messageDiv.textContent = 'Please fill in all fields';
+                else alert('Please fill in all fields');
                 return;
             }
 
             if (password.length < 6) {
-                messageDiv.textContent = 'Password must be at least 6 characters';
+                if (messageDiv) messageDiv.textContent = 'Password must be at least 6 characters';
+                else alert('Password must be at least 6 characters');
                 return;
             }
 
@@ -699,10 +803,26 @@
                 isUserAuthenticated = true;
                 await loadUserData();
                 showMainApp();
+                updateNavButtons();
+                closeLoginModal();
 
             } catch (error) {
-                messageDiv.textContent = error.message;
+                if (messageDiv) messageDiv.textContent = error.message;
+                else alert(error.message);
             }
+        }
+
+        async function handleSignup() {
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const messageDiv = document.getElementById('authMessage');
+            await handleSignupWithEmailPassword(email, password, messageDiv);
+        }
+
+        function handleSignupFromModal() {
+            const email = document.getElementById('signupEmailModal').value;
+            const password = document.getElementById('signupPasswordModal').value;
+            handleSignupWithEmailPassword(email, password, null);
         }
 
         async function handleLogout() {
@@ -711,34 +831,19 @@
             }
             currentUser = null;
             isUserAuthenticated = false;
+            updateNavButtons();
             location.reload();
         }
 
-        function showLoginForm() {
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('signupForm').style.display = 'none';
-            document.getElementById('authMessage').textContent = '';
-        }
-
-        function showSignupForm() {
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('signupForm').style.display = 'block';
-            document.getElementById('authMessage').textContent = '';
-        }
-
         function showMainApp() {
-            document.getElementById('authScreen').style.display = 'none';
             document.getElementById('inputScreen').style.display = 'block';
-            // Show logout button if authenticated
-            if (isUserAuthenticated) {
-                document.getElementById('logoutSection').style.display = 'block';
-            }
         }
 
         async function checkAuthState() {
             if (!supabaseClient) {
-                // Supabase not configured, show auth screen with message
-                document.getElementById('authScreen').style.display = 'block';
+                // Supabase not configured, show main app
+                document.getElementById('inputScreen').style.display = 'block';
+                updateNavButtons();
                 return;
             }
 
@@ -750,8 +855,9 @@
                 await loadUserData();
                 showMainApp();
             } else {
-                document.getElementById('authScreen').style.display = 'block';
+                document.getElementById('inputScreen').style.display = 'block';
             }
+            updateNavButtons();
         }
 
         // ==========================================
@@ -992,6 +1098,38 @@
         function closeSettings() {
             // Hide the modal
             document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        // Login Modal Functions
+        function openLoginModal() {
+            document.getElementById('loginModal').style.display = 'flex';
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').style.display = 'none';
+        }
+
+        function showLoginInModal() {
+            document.getElementById('loginFormInModal').style.display = 'block';
+            document.getElementById('signupFormInModal').style.display = 'none';
+        }
+
+        function showSignupInModal() {
+            document.getElementById('loginFormInModal').style.display = 'none';
+            document.getElementById('signupFormInModal').style.display = 'block';
+        }
+
+        function updateNavButtons() {
+            const loginBtn = document.getElementById('loginBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            if (isUserAuthenticated) {
+                loginBtn.style.display = 'none';
+                logoutBtn.style.display = 'block';
+            } else {
+                loginBtn.style.display = 'block';
+                logoutBtn.style.display = 'none';
+            }
         }
 
         async function toggleDarkMode() {
