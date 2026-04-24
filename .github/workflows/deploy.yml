@@ -22,14 +22,37 @@ jobs:
 
       - name: Create config.js from secrets
         run: |
-          echo "Creating config.js..."
+          echo "=== Creating config.js ==="
+          echo "SUPABASE_URL length: ${{ secrets.SUPABASE_URL != '' && format('{0}', length(secrets.SUPABASE_URL)) || 'EMPTY' }}"
+          echo "SUPABASE_ANON_KEY length: ${{ secrets.SUPABASE_ANON_KEY != '' && format('{0}', length(secrets.SUPABASE_ANON_KEY)) || 'EMPTY' }}"
+
+          if [ -z "${{ secrets.SUPABASE_URL }}" ] || [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
+            echo "ERROR: One or both secrets are empty!"
+            echo "Please check your GitHub Secrets settings."
+            exit 1
+          fi
+
           echo "window.SUPABASE_URL = '${{ secrets.SUPABASE_URL }}';" > docs/config.js
           echo "window.SUPABASE_ANON_KEY = '${{ secrets.SUPABASE_ANON_KEY }}';" >> docs/config.js
-          echo "config.js created. Contents:"
+
+          echo "=== config.js contents ==="
           cat docs/config.js
+          echo "=== File exists check ==="
+          if [ -f docs/config.js ]; then
+            echo "config.js exists!"
+            wc -l docs/config.js
+          else
+            echo "ERROR: config.js was not created!"
+            exit 1
+          fi
 
       - name: List docs directory
-        run: ls -la docs/
+        run: |
+          echo "=== All files in docs/ ==="
+          ls -la docs/
+          echo ""
+          echo "=== Checking config.js ==="
+          file docs/config.js || echo "config.js not found!"
 
       - name: Upload to GitHub Pages
         uses: actions/upload-pages-artifact@v3
