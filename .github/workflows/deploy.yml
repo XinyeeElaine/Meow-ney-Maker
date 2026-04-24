@@ -22,27 +22,14 @@ jobs:
 
       - name: Create config.js from secrets
         run: |
-          cat > docs/config.js << 'EOF'
-          /**
-           * Supabase Configuration
-           * Auto-generated from GitHub Secrets
-           */
+          echo "Creating config.js..."
+          echo "window.SUPABASE_URL = '${{ secrets.SUPABASE_URL }}';" > docs/config.js
+          echo "window.SUPABASE_ANON_KEY = '${{ secrets.SUPABASE_ANON_KEY }}';" >> docs/config.js
+          echo "config.js created. Contents:"
+          cat docs/config.js
 
-          window.SUPABASE_URL = '${{ secrets.SUPABASE_URL }}';
-          window.SUPABASE_ANON_KEY = '${{ secrets.SUPABASE_ANON_KEY }}';
-          EOF
-
-      - name: Verify config.js was created
-        run: |
-          echo "Checking if config.js exists..."
-          if [ -f docs/config.js ]; then
-            echo "config.js created successfully!"
-            echo "File contents:"
-            cat docs/config.js
-          else
-            echo "ERROR: config.js was not created!"
-            exit 1
-          fi
+      - name: List docs directory
+        run: ls -la docs/
 
       - name: Upload to GitHub Pages
         uses: actions/upload-pages-artifact@v3
