@@ -1085,6 +1085,7 @@
             } else {
                 localStorage.setItem('activeStartTime', startTime);
                 localStorage.setItem('activeRate', ratePerSecond);
+                localStorage.setItem('activeTotalEarned', totalEarned);
                 localStorage.setItem('isWorking', 'true');
             }
         }
@@ -1153,15 +1154,20 @@
         function updateTimer() {
             const elapsed = (Date.now() - startTime) / 1000;
             totalEarned = elapsed * ratePerSecond;
-            
+
             // Update money display
             document.getElementById('moneyDisplay').textContent = totalEarned.toFixed(4);
-            
+
+            // Save totalEarned periodically for crash recovery (guest users only)
+            if (!isUserAuthenticated && localStorage.getItem('isWorking') === 'true') {
+                localStorage.setItem('activeTotalEarned', totalEarned);
+            }
+
             // Update time display
             const hours = Math.floor(elapsed / 3600);
             const minutes = Math.floor((elapsed % 3600) / 60);
             const seconds = Math.floor(elapsed % 60);
-            document.getElementById('timeDisplay').textContent = 
+            document.getElementById('timeDisplay').textContent =
                 `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
 
@@ -1174,6 +1180,7 @@
             } else {
                 localStorage.removeItem('activeStartTime');
                 localStorage.removeItem('activeRate');
+                localStorage.removeItem('activeTotalEarned');
                 localStorage.removeItem('isWorking');
             }
 
@@ -1211,6 +1218,7 @@
             } else {
                 localStorage.removeItem('activeStartTime');
                 localStorage.removeItem('activeRate');
+                localStorage.removeItem('activeTotalEarned');
                 localStorage.removeItem('isWorking');
             }
         }
@@ -1425,6 +1433,7 @@
                 if (localStorage.getItem('isWorking') === 'true') {
                     startTime = parseInt(localStorage.getItem('activeStartTime'));
                     ratePerSecond = parseFloat(localStorage.getItem('activeRate'));
+                    totalEarned = parseFloat(localStorage.getItem('activeTotalEarned')) || 0;
 
                     document.getElementById('inputScreen').style.display = 'none';
                     document.getElementById('timerScreen').style.display = 'block';
