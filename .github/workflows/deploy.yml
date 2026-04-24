@@ -23,12 +23,14 @@ jobs:
       - name: Create config.js from secrets
         run: |
           echo "=== Creating config.js ==="
-          echo "SUPABASE_URL length: ${{ secrets.SUPABASE_URL != '' && format('{0}', length(secrets.SUPABASE_URL)) || 'EMPTY' }}"
-          echo "SUPABASE_ANON_KEY length: ${{ secrets.SUPABASE_ANON_KEY != '' && format('{0}', length(secrets.SUPABASE_ANON_KEY)) || 'EMPTY' }}"
 
-          if [ -z "${{ secrets.SUPABASE_URL }}" ] || [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
-            echo "ERROR: One or both secrets are empty!"
-            echo "Please check your GitHub Secrets settings."
+          if [ -z "${{ secrets.SUPABASE_URL }}" ] || [ "${{ secrets.SUPABASE_URL }}" = "" ]; then
+            echo "ERROR: SUPABASE_URL secret is empty!"
+            exit 1
+          fi
+
+          if [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ] || [ "${{ secrets.SUPABASE_ANON_KEY }}" = "" ]; then
+            echo "ERROR: SUPABASE_ANON_KEY secret is empty!"
             exit 1
           fi
 
