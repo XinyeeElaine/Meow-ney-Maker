@@ -1,6 +1,3 @@
-# Supabase configuration (contains sensitive credentials)
-docs/config.js
-
 # Node modules (if using any build tools)
 node_modules/
 

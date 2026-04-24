@@ -20,46 +20,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create config.js from secrets
-        shell: bash
-        run: |
-          echo "=== Creating config.js ==="
-
-          # Check if secrets are set
-          if [ -z "${{ secrets.SUPABASE_URL }}" ]; then
-            echo "ERROR: SUPABASE_URL is not set!"
-            echo "Please add SUPABASE_URL to your repository secrets."
-            exit 1
-          fi
-
-          if [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
-            echo "ERROR: SUPABASE_ANON_KEY is not set!"
-            echo "Please add SUPABASE_ANON_KEY to your repository secrets."
-            exit 1
-          fi
-
-          # Create config.js
-          cat > docs/config.js << EOF
-          window.SUPABASE_URL = '${{ secrets.SUPABASE_URL }}';
-          window.SUPABASE_ANON_KEY = '${{ secrets.SUPABASE_ANON_KEY }}';
-          EOF
-
-          echo "config.js created successfully"
-          echo "File contents (secrets masked):"
-          head -1 docs/config.js
-          head -2 docs/config.js | tail -1
-
-      - name: Verify config.js
-        run: |
-          if [ -f docs/config.js ]; then
-            echo "✓ config.js exists"
-            echo "Size: $(wc -c < docs/config.js) bytes"
-            echo "Lines: $(wc -l < docs/config.js)"
-          else
-            echo "✗ config.js NOT found!"
-            exit 1
-          fi
-
       - name: Upload to GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
