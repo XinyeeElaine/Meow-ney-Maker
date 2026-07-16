@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard · Meow-ney Maker</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;500;600;700&family=VT323&display=swap">
+    <link rel="stylesheet" href="css/style.css?v=55">
+    <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'midnight');</script>
+</head>
+<body>
+    <header class="top-nav">
+        <a class="nav-left" href="index.html" title="Home" style="cursor:pointer;text-decoration:none;">
+            <img src="assets/favicon.png" class="nav-logo" alt="Meow-ney Maker logo">
+            <span class="brand">Meow-ney Maker</span>
+        </a>
+        <nav class="nav-tabs">
+            <a href="index.html" class="nav-tab">Timer</a>
+            <a href="dashboard.html" class="nav-tab active">Dashboard</a>
+            <a href="diary.html" class="nav-tab">Diary</a>
+            <a href="todo.html" class="nav-tab">To-Do</a>
+        </nav>
+        <div class="nav-right"></div>
+    </header>
+
+    <div class="container">
+        <h1>Dashboard <span class="pix" data-icon="chart"></span></h1>
+        <p style="color:var(--text-dim); margin:22px 0; font-weight:600;"><span class="pix" data-icon="cone"></span> Coming soon</p>
+        <a href="index.html" class="btn btn-blue" style="display:inline-block; text-decoration:none;">Back to Timer</a>
+    </div>
+
+    <script src="config/config.js" onerror="window.configLoadFailed = true;"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/app.js?v=55"></script>
+</body>
+</html>

@@ -1,654 +1,149 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earn Your Catnip 🐟</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #ffffff;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 70px 20px 20px 20px;
-        }
-
-        .container {
-            background: #fafaf0;
-            border-radius: 20px;
-            padding: 40px;
-            /* Added a light border and softened the shadow */
-            border: 2px solid #f0f0e6; 
-            box-shadow: 0 15px 40px rgba(171, 147, 255, 0.15);
-            text-align: center;
-            max-width: 500px;
-            width: 100%;
-        }
-
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 2em;
-        }
-
-        .cat-container {
-            margin: 20px 0;
-        }
-
-        .cat-container img {
-            width: 150px;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: none;
-            transition: transform 0.3s;
-        }
-
-        .cat-container img:hover {
-            transform: scale(1.1) rotate(5deg);
-        }
-
-        .cat-container.working img {
-            animation: bounce 0.5s infinite alternate;
-        }
-
-        @keyframes bounce {
-            from { transform: translateY(0); }
-            to { transform: translateY(-10px); }
-        }
-
-        .input-group {
-            margin: 15px 0;
-            text-align: left;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #555;
-            font-weight: 600;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .btn {
-            padding: 15px 30px;
-            font-size: 16px;
-            font-weight: bold;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin: 10px 5px;
-        }
-
-        .btn-start {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
-            width: 100%;
-            font-size: 18px;
-        }
-
-        .btn-start:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(17, 153, 142, 0.4);
-        }
-
-        .btn-blue {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-            width: 100%;
-            font-size: 18px;
-        }
-
-        .btn-blue:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.4);
-        }
-
-        .btn-stop {
-            background: linear-gradient(135deg, #f46b45 0%, #eea849 100%);
-            color: white;
-            width: 100%;
-            font-size: 18px;
-        }
-
-        .btn-stop:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(244, 107, 69, 0.4);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(235, 51, 73, 0.4);
-        }
-
-        .btn-reset, .btn-history {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-reset:hover, .btn-history:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        /* Screens Setup */
-        .timer-screen, .result-screen, .history-screen {
-            display: none;
-        }
-
-        .money-display {
-            font-size: 3.5em;
-            font-weight: bold;
-            color: #11998e;
-            margin: 20px 0;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .money-display::before {
-            content: 'RM';
-            font-size: 0.5em;
-            vertical-align: top;
-        }
-
-        .time-display {
-            font-size: 1.2em;
-            color: #666;
-            margin-bottom: 20px;
-        }
-
-        .rate-info {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-            font-size: 0.9em;
-            color: #666;
-        }
-
-        .result-amount {
-            font-size: 4em;
-            font-weight: bold;
-            color: #eb3349;
-            margin: 20px 0;
-        }
-
-        .result-amount::before {
-            content: 'RM';
-            font-size: 0.6em;
-            vertical-align: top;
-        }
-
-        .result-details {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            text-align: left;
-        }
-
-        .result-details p {
-            margin: 10px 0;
-            color: #555;
-        }
-
-        .celebration {
-            font-size: 2em;
-            margin: 10px 0;
-        }
-
-        /* History Screen Styles */
-        .history-stats {
-            display: flex;
-            justify-content: space-between;
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-        }
-
-        .stat-box {
-            text-align: center;
-            flex: 1;
-        }
-
-        .stat-box span {
-            display: block;
-            font-size: 1.2em; 
-            font-weight: bold;
-            color: #11998e;
-        }
-
-        .stat-box p {
-            font-size: 0.8em;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .history-list {
-            max-height: 250px;
-            overflow-y: auto;
-            text-align: left;
-            margin-bottom: 20px;
-            border: 2px solid #f8f9fa;
-            border-radius: 10px;
-            padding: 10px;
-        }
-
-        .history-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center; 
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            font-size: 0.9em;
-        }
-        .history-item:last-child {
-            border-bottom: none;
-        }
-
-        /* Delete Button Styling */
-        .delete-btn {
-            background: transparent;
-            border: none;
-            color: #ff6b6b;
-            cursor: pointer;
-            font-size: 1.1em;
-            margin-left: 10px;
-            transition: transform 0.2s;
-        }
-
-        .delete-btn:hover {
-            transform: scale(1.3);
-        }
-        
-        .button-group {
-            display: flex;
-            justify-content: center;
-        }
-
-        .dj-cat {
-            width: 200px;
-            border-radius: 15px;
-            margin: 15px auto;
-            display: block;
-            box-shadow: 0 10px 25px rgba(171, 147, 255, 0.4);
-            animation: floatCat 3s ease-in-out infinite;
-        }
-
-        @keyframes floatCat {
-            0%, 100% { transform: translateY(0px) rotate(-2deg); }
-            50% { transform: translateY(-10px) rotate(2deg); }
-        }
-        /* ==========================================
-           DARK MODE STYLES
-           ========================================== */
-        body.dark-mode {
-            background-color: #121212;
-            color: #ffffff;
-        }
-        body.dark-mode .container {
-            background: #1e1e1e;
-            border-color: #333;
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
-        }
-        body.dark-mode h1, body.dark-mode h2, body.dark-mode p, body.dark-mode label, body.dark-mode .time-display, body.dark-mode .money-display {
-            color: #ffffff;
-        }
-        body.dark-mode input {
-            background-color: #2d2d2d;
-            color: #ffffff;
-            border-color: #444;
-        }
-        body.dark-mode .history-item {
-            background: #2d2d2d;
-            border-color: #444;
-        }
-        body.dark-mode .history-item strong {
-            color: #ab93ff;
-        }
-        body.dark-mode #historyList p {
-            color: #bbb !important; /* Lighter grey for empty history text */
-        }
-        body.dark-mode .settings-box {
-            border-color: #444 !important;
-        }
-        /* Fix for the white boxes in Dark Mode */
-        body.dark-mode .history-stats,
-        body.dark-mode .result-details {
-            background: #2d2d2d; /* Changes the light box to dark gray */
-            border: 1px solid #444; /* Adds a subtle dark border */
-        }
-
-        /* Ensure the text inside those boxes stays readable */
-        body.dark-mode .result-details p,
-        body.dark-mode .stat-box p {
-            color: #eeeeee; 
-        }
-
-        /* Keep the teal color popping for the numbers in dark mode */
-        body.dark-mode .stat-box span {
-            color: #38ef7d; 
-        }
-
-        /* ==========================================
-           TOGGLE SWITCH STYLES
-           ========================================== */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
-        }
-        .switch input { 
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-        }
-        input:checked + .slider {
-            background-color: #ab93ff;
-        }
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-        .slider.round {
-            border-radius: 34px;
-        }
-        .slider.round:before {
-            border-radius: 50%;
-        }
-
-        /* ==========================================
-            TOP NAVIGATION STYLES
-        ========================================== */
-        .top-nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: rgba(250, 250, 240, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 2px solid #f0f0e6;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px;
-            z-index: 100;
-        }
-
-        body.dark-mode .top-nav {
-            background: rgba(30, 30, 30, 0.95);
-            border-bottom-color: #333;
-        }
-
-        .nav-left, .nav-right {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .nav-btn {
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: bold;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            transition: all 0.3s;
-        }
-
-        .nav-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .nav-btn-icon {
-            padding: 10px;
-            font-size: 24px;
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            background: transparent;
-            color: #667eea;
-            transition: all 0.3s;
-        }
-
-        .nav-btn-icon:hover {
-            transform: rotate(45deg) scale(1.1);
-        }
-
-        body.dark-mode .nav-btn-icon {
-            color: #ab93ff;
-        }
-
-        /* ==========================================
-            MODAL / POP-UP STYLES
-        ========================================== */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            display: none; 
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: #fafaf0;
-            padding: 30px;
-            border-radius: 20px;
-            border: 2px solid #f0f0e6;
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
-            text-align: center;
-            position: relative;
-            width: 90%;
-            max-width: 400px;
-        }
-
-        .modal-small {
-            max-width: 350px;
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            font-size: 28px;
-            font-weight: bold;
-            color: #555;
-            cursor: pointer;
-            transition: color 0.3s;
-        }
-
-        .close-btn:hover {
-            color: #eb3349;
-        }
-
-        .settings-box {
-            margin: 20px 0;
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 15px; 
-            border: 1px solid #e0d4ff;
-            border-radius: 10px;
-        }
-
-        /* Dark Mode support for Modal */
-        body.dark-mode .modal-content {
-            background: #1e1e1e;
-            border-color: #333;
-        }
-        body.dark-mode .close-btn {
-            color: #bbb;
-        }
-        body.dark-mode .close-btn:hover {
-            color: #ff6b6b;
-        }
-    </style>
+    <title>Earn Your Catnip</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;500;600;700&family=VT323&display=swap">
+    <link rel="stylesheet" href="css/style.css?v=55">
     <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Config (optional - for local development, not in git) -->
-    <script src="config.js" onerror="window.configLoadFailed = true;"></script>
+    <script src="config/config.js" onerror="window.configLoadFailed = true;"></script>
 </head>
 <body>
     <header class="top-nav">
-        <div class="nav-left"></div>
+        <div class="nav-left">
+            <span class="logo-wrap"><img src="assets/favicon.png" class="nav-logo" alt="Meow-ney Maker logo" onclick="triggerBonus(event)" title="Bonus!"></span>
+            <span class="brand">Meow-ney Maker</span>
+        </div>
+        <nav class="nav-tabs">
+            <a href="index.html" class="nav-tab active">Timer</a>
+            <a href="dashboard.html" class="nav-tab">Dashboard</a>
+            <a href="diary.html" class="nav-tab">Diary</a>
+            <a href="todo.html" class="nav-tab">To-Do</a>
+        </nav>
         <div class="nav-right">
-            <button id="loginBtn" class="nav-btn" onclick="openLoginModal()" style="display: none;">🔐 Login</button>
-            <button id="logoutBtn" class="nav-btn" onclick="handleLogout()" style="display: none;">🚪 Logout</button>
-            <button class="nav-btn-icon" onclick="openSettings()">⚙️</button>
+            <button id="loginBtn" class="nav-btn-icon" data-icon="login" onclick="openLoginModal()" style="display: none;" title="Login" aria-label="Login"></button>
+            <button id="logoutBtn" class="nav-btn-icon" data-icon="logout" onclick="handleLogout()" style="display: none;" title="Logout" aria-label="Logout"></button>
+            <button class="nav-btn-icon" data-icon="settings" onclick="openSettings()" title="Settings" aria-label="Settings"></button>
         </div>
     </header>
 
     <div class="container">
         <div id="inputScreen" class="input-screen">
-            <h1>Gimme Meow-ney /ᐠ - ˕ -マ</h1>
+            <h1><span class="pix" data-icon="cat"></span> Meow~Ney Time <span class="pix" data-icon="paw"></span><br><span class="kao">/ᐠ - ˕ -マ</span></h1>
 
             <div class="input-group">
-                <label>💵 Salary (RM)</label>
+                <label><span class="pix" data-icon="coin"></span> Salary (RM)</label>
                 <input type="number" id="salary" placeholder="E.g: 1500">
             </div>
 
             <div class="input-group">
-                <label>⏰ Working Hours</label>
+                <label><span class="pix" data-icon="clock"></span> Working Hours</label>
                 <input type="number" id="hoursPerDay" placeholder="E.g: 8">
             </div>
 
             <div class="input-group">
-                <label>📅 Working Days</label>
+                <label><span class="pix" data-icon="calendar"></span> Working Days</label>
                 <input type="number" id="daysPerMonth" placeholder="E.g: 26">
             </div>
 
-            <button class="btn btn-start" onclick="startWork()">Welcome to HELL✨</button>
-            <button class="btn btn-blue" onclick="viewHistory()" style="width: 100%; font-size: 18px;">📜 View History</button>
+            <button class="btn btn-start" onclick="startWork()">Welcome to HELL <span class="pix" data-icon="star"></span></button>
+            <button class="btn btn-blue" onclick="viewHistory()" style="width: 100%; font-size: 18px;"><span class="pix" data-icon="chart"></span> View History</button>
 
         </div>
 
         <div id="timerScreen" class="timer-screen">
 
 
-            <h1>努力搬砖中... 🧱</h1>
-            
+            <h1 id="timerTitle">Grinding... 🧱</h1>
+
             <div class="cat-container working" id="workingCat">
-                <img src="https://cataas.com/cat/cute" alt="MiaOOO" id="catImage">
+                <div class="cat-sprite" id="catSprite" role="img" aria-label="Pixel cat"></div>
             </div>
 
             <div class="money-display" id="moneyDisplay">0.0000</div>
-            
+
             <div class="time-display">
-                已工作: <span id="timeDisplay">00:00:00</span>
+                Worked: <span id="timeDisplay">00:00:00</span>
             </div>
 
-            <button class="btn btn-stop" onclick="stopWork()"> BALIKKK 🔥</button>
+            <button class="btn btn-stop" onclick="stopWork()">CLOCK OUT <span class="pix" data-icon="fire"></span></button>
         </div>
 
         <div id="resultScreen" class="result-screen">
-            <h1>今日躺平🐈</h1>
+            <h1>Clocked Out <span class="pix" data-icon="cat"></span></h1>
 
             <div class="celebration">
                 <img src="https://media.tenor.com/tLF__YybpV0AAAAj/dj-cat.gif" alt="DJ Cat" class="dj-cat">
             </div> <div class="result-amount" id="resultAmount">0.00</div>
 
             <div class="result-details">
-                <p>📅 工作时长: <strong id="resultTime">0</strong></p>
-                <p>💰 每秒收入: <strong>RM<span id="resultRate">0</span></strong></p>
-                <p>🤑 今日入账: <strong>RM<span id="resultEarned">0</span></strong></p>
+                <p><span class="pix" data-icon="calendar"></span> Time worked: <strong id="resultTime">0</strong></p>
+                <p><span class="pix" data-icon="coin"></span> Per second: <strong>RM<span id="resultRate">0</span></strong></p>
+                <p><span class="pix" data-icon="coin"></span> Earned today: <strong>RM<span id="resultEarned">0</span></strong></p>
             </div>
 
             <div class="button-group">
-                <button class="btn btn-reset" onclick="resetTimer()">RuNnnN</button>
-                <button class="btn btn-history" onclick="viewHistory()">View History 📊</button>
+                <button class="btn btn-reset" onclick="resetTimer()" style="width: 100%;">RuNnnN</button>
             </div>
         </div>
 
         <div id="historyScreen" class="history-screen">
-            <h1>Working History 📈</h1>
-         
+            <h1>Working History <span class="pix" data-icon="chart"></span></h1>
+
             <div class="history-stats">
                 <div class="stat-box">
                     <span id="totalDays">0</span>
-                    <p>总天数 (Days)</p>
+                    <p>Days</p>
                 </div>
                 <div class="stat-box">
                     <span id="totalHours">0</span>
-                    <p>总时长 (Hours)</p>
+                    <p>Hours</p>
                 </div>
                 <div class="stat-box">
                     <span id="totalMoney">0</span>
-                    <p>总收入 (RM)</p>
+                    <p>Earned (RM)</p>
                 </div>
             </div>
 
             <div class="history-list" id="historyList">
-                </div> 
-            
-            <button class="btn btn-reset" onclick="goHomeFromHistory()" style="width: 100%">Back</button> 
-            <button id="clearAllBtn" class="btn btn-danger" onclick="clearHistory()" style="width: 100%; margin-top: 10px;">Clear All History</button> 
+                </div>
+
+            <button class="btn btn-reset" onclick="goHomeFromHistory()" style="width: 100%">Back</button>
+            <button id="clearAllBtn" class="btn btn-danger" onclick="clearHistory()" style="width: 100%; margin-top: 10px;">Clear All History</button>
         </div>
 
         <div id="settingsModal" class="modal-overlay">
-            <div class="modal-content">
+            <div class="modal-content settings-panel">
                 <span class="close-btn" onclick="closeSettings()">&times;</span>
-                <h2>⚙️ Settings</h2>
 
-                <div class="settings-box">
-                    <span style="font-size: 16px; font-weight: bold;">🌙 Dark Mode</span>
-                    <label class="switch">
-                        <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
-                        <span class="slider round"></span>
-                    </label>
+                <div class="settings-header">
+                    <h2><span class="pix" data-icon="settings"></span> Settings</h2>
+                    <p class="settings-sub">Make the grind yours</p>
                 </div>
+
+                <section class="settings-section">
+                    <div class="section-head">Appearance</div>
+                    <div class="setting-row">
+                        <div class="setting-text">
+                            <span class="setting-label">Theme</span>
+                            <span class="setting-hint" id="themeName">Midnight</span>
+                        </div>
+                        <div class="theme-dots" id="themeDots">
+                            <button class="theme-dot dot-midnight" data-theme-name="midnight" onclick="setTheme('midnight')" title="Midnight" aria-label="Midnight theme"></button>
+                            <button class="theme-dot dot-peach"    data-theme-name="peach"    onclick="setTheme('peach')"    title="Peach"    aria-label="Peach theme"></button>
+                            <button class="theme-dot dot-mint"     data-theme-name="mint"     onclick="setTheme('mint')"     title="Mint"     aria-label="Mint theme"></button>
+                            <button class="theme-dot dot-lavender" data-theme-name="lavender" onclick="setTheme('lavender')" title="Lavender" aria-label="Lavender theme"></button>
+                        </div>
+                    </div>
+                </section>
+
+                <p class="settings-foot">· Meow-ney Maker ·</p>
             </div>
         </div>
 
@@ -658,794 +153,49 @@
 
                 <!-- Login Form -->
                 <div id="loginFormInModal">
-                    <h2>🔐 Login</h2>
+                    <h2><span class="pix" data-icon="login"></span> Login</h2>
+                    <button class="btn btn-google" onclick="handleGoogleLogin()"><span class="pix" data-icon="google"></span> Sign in with Google</button>
+                    <p class="or-divider">— or —</p>
                     <div class="input-group">
-                        <label>📧 Email</label>
+                        <label><span class="pix" data-icon="mail"></span> Email</label>
                         <input type="email" id="loginEmailModal" placeholder="your@email.com">
                     </div>
                     <div class="input-group">
-                        <label>🔒 Password</label>
+                        <label><span class="pix" data-icon="lock"></span> Password</label>
                         <input type="password" id="loginPasswordModal" placeholder="••••••••">
                     </div>
                     <button class="btn btn-start" onclick="handleLoginFromModal()">Login</button>
-                    <p style="margin-top: 15px;">
+                    <p style="margin-top: 12px;">
+                        <a href="#" class="link-accent" onclick="handleForgotPassword()">Forgot password?</a>
+                    </p>
+                    <p style="margin-top: 8px;">
                         Don't have an account?
-                        <a href="#" onclick="showSignupInModal()" style="color: #667eea;">Sign Up</a>
+                        <a href="#" class="link-accent" onclick="showSignupInModal()">Sign Up</a>
                     </p>
                 </div>
 
                 <!-- Signup Form -->
                 <div id="signupFormInModal" style="display: none;">
-                    <h2>✨ Sign Up</h2>
+                    <h2><span class="pix" data-icon="star"></span> Sign Up</h2>
                     <div class="input-group">
-                        <label>📧 Email</label>
+                        <label><span class="pix" data-icon="mail"></span> Email</label>
                         <input type="email" id="signupEmailModal" placeholder="your@email.com">
                     </div>
                     <div class="input-group">
-                        <label>🔒 Password</label>
+                        <label><span class="pix" data-icon="lock"></span> Password</label>
                         <input type="password" id="signupPasswordModal" placeholder="••••••••">
                     </div>
                     <button class="btn btn-start" onclick="handleSignupFromModal()">Sign Up</button>
                     <p style="margin-top: 15px;">
                         Already have an account?
-                        <a href="#" onclick="showLoginInModal()" style="color: #667eea;">Login</a>
+                        <a href="#" class="link-accent" onclick="showLoginInModal()">Login</a>
                     </p>
                 </div>
             </div>
         </div>
 
-    <script>
-        // ==========================================
-        //  SUPABASE CONFIGURATION
-        // ==========================================
-        // Load from config.js or use empty defaults (to be set via environment)
-        const SUPABASE_URL = window.SUPABASE_URL || '';
-        const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || '';
+    </div>
 
-        let supabaseClient = null;
-        let currentUser = null;
-        let isUserAuthenticated = false;
-
-        // Initialize Supabase if credentials are available
-        if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        }
-
-        // ==========================================
-        //  AUTHENTICATION FUNCTIONS
-        // ==========================================
-        async function handleLoginWithEmailPassword(email, password, messageDiv = null) {
-            if (!supabaseClient) {
-                if (messageDiv) messageDiv.textContent = 'Supabase not configured. Please contact administrator.';
-                else alert('Supabase not configured. Please contact administrator.');
-                return;
-            }
-
-            if (!email || !password) {
-                if (messageDiv) messageDiv.textContent = 'Please fill in all fields';
-                else alert('Please fill in all fields');
-                return;
-            }
-
-            try {
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-
-                if (error) throw error;
-
-                currentUser = data.user;
-                isUserAuthenticated = true;
-                await loadUserData();
-                showMainApp();
-                updateNavButtons();
-                closeLoginModal();
-
-            } catch (error) {
-                if (messageDiv) messageDiv.textContent = error.message;
-                else alert(error.message);
-            }
-        }
-
-        async function handleLogin() {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            const messageDiv = document.getElementById('authMessage');
-            await handleLoginWithEmailPassword(email, password, messageDiv);
-        }
-
-        function handleLoginFromModal() {
-            const email = document.getElementById('loginEmailModal').value;
-            const password = document.getElementById('loginPasswordModal').value;
-            handleLoginWithEmailPassword(email, password, null);
-        }
-
-        async function handleSignupWithEmailPassword(email, password, messageDiv = null) {
-            if (!supabaseClient) {
-                if (messageDiv) messageDiv.textContent = 'Supabase not configured. Please contact administrator.';
-                else alert('Supabase not configured. Please contact administrator.');
-                return;
-            }
-
-            if (!email || !password) {
-                if (messageDiv) messageDiv.textContent = 'Please fill in all fields';
-                else alert('Please fill in all fields');
-                return;
-            }
-
-            if (password.length < 6) {
-                if (messageDiv) messageDiv.textContent = 'Password must be at least 6 characters';
-                else alert('Password must be at least 6 characters');
-                return;
-            }
-
-            try {
-                const { data, error } = await supabaseClient.auth.signUp({
-                    email: email,
-                    password: password
-                });
-
-                if (error) throw error;
-
-                // Create default preferences
-                await supabaseClient
-                    .from('user_preferences')
-                    .insert([{
-                        user_id: data.user.id,
-                        salary: 0,
-                        hours_per_day: 8,
-                        days_per_month: 26,
-                        theme: 'light'
-                    }]);
-
-                currentUser = data.user;
-                isUserAuthenticated = true;
-                await loadUserData();
-                showMainApp();
-                updateNavButtons();
-                closeLoginModal();
-
-            } catch (error) {
-                if (messageDiv) messageDiv.textContent = error.message;
-                else alert(error.message);
-            }
-        }
-
-        async function handleSignup() {
-            const email = document.getElementById('signupEmail').value;
-            const password = document.getElementById('signupPassword').value;
-            const messageDiv = document.getElementById('authMessage');
-            await handleSignupWithEmailPassword(email, password, messageDiv);
-        }
-
-        function handleSignupFromModal() {
-            const email = document.getElementById('signupEmailModal').value;
-            const password = document.getElementById('signupPasswordModal').value;
-            handleSignupWithEmailPassword(email, password, null);
-        }
-
-        async function handleLogout() {
-            if (supabaseClient) {
-                await supabaseClient.auth.signOut();
-            }
-            currentUser = null;
-            isUserAuthenticated = false;
-            updateNavButtons();
-            location.reload();
-        }
-
-        function showMainApp() {
-            document.getElementById('historyScreen').style.display = 'none';
-            document.getElementById('timerScreen').style.display = 'none';
-            document.getElementById('resultScreen').style.display = 'none';
-            document.getElementById('inputScreen').style.display = 'block';
-        }
-
-        async function checkAuthState() {
-            if (!supabaseClient) {
-                // Supabase not configured, show main app
-                document.getElementById('inputScreen').style.display = 'block';
-                updateNavButtons();
-                return;
-            }
-
-            const { data: { session } } = await supabaseClient.auth.getSession();
-
-            if (session) {
-                currentUser = session.user;
-                isUserAuthenticated = true;
-                await loadUserData();
-                showMainApp();
-            } else {
-                document.getElementById('inputScreen').style.display = 'block';
-            }
-            updateNavButtons();
-        }
-
-        // ==========================================
-        //  SUPABASE DATA FUNCTIONS
-        // ==========================================
-        async function loadUserData() {
-            if (!supabaseClient || !currentUser) return;
-
-            try {
-                const { data: prefs } = await supabaseClient
-                    .from('user_preferences')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .maybeSingle();
-
-                if (prefs && prefs.salary > 0) {
-                    document.getElementById('salary').value = prefs.salary || '';
-                    document.getElementById('hoursPerDay').value = prefs.hours_per_day || '';
-                    document.getElementById('daysPerMonth').value = prefs.days_per_month || '';
-                }
-
-                if (prefs && prefs.theme === 'dark') {
-                    document.body.classList.add('dark-mode');
-                    document.getElementById('darkModeToggle').checked = true;
-                }
-
-                // Query all and filter in JS to avoid 406 error
-                const { data: allActiveSessions } = await supabaseClient
-                    .from('active_sessions')
-                    .select('*');
-
-                const activeSession = allActiveSessions?.find(s => s.user_id === currentUser.id);
-
-                if (activeSession) {
-                    startTime = new Date(activeSession.start_time).getTime();
-                    ratePerSecond = activeSession.rate_per_second;
-
-                    document.getElementById('inputScreen').style.display = 'none';
-                    document.getElementById('timerScreen').style.display = 'block';
-
-                    timerInterval = setInterval(updateTimer, 100);
-                }
-            } catch (error) {
-                console.error('Error loading user data:', error);
-            }
-        }
-
-        async function saveUserPreferences(salary, hours, days) {
-            if (!supabaseClient || !currentUser) return;
-
-            try {
-                await supabaseClient
-                    .from('user_preferences')
-                    .upsert({
-                        user_id: currentUser.id,
-                        salary: salary,
-                        hours_per_day: hours,
-                        days_per_month: days,
-                        updated_at: new Date().toISOString()
-                    }, { onConflict: 'user_id' });
-            } catch (error) {
-                console.error('Error saving preferences:', error);
-            }
-        }
-
-        async function saveWorkSessionToSupabase(durationSeconds, earnedAmount) {
-            if (!supabaseClient || !currentUser) return;
-
-            try {
-                const today = new Date();
-                const dateString = `${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
-
-                await supabaseClient
-                    .from('work_sessions')
-                    .insert([{
-                        user_id: currentUser.id,
-                        start_time: new Date(startTime).toISOString(),
-                        end_time: new Date().toISOString(),
-                        duration_seconds: Math.floor(durationSeconds),
-                        rate_per_second: ratePerSecond,
-                        amount_earned: earnedAmount,
-                        session_date: dateString
-                    }]);
-            } catch (error) {
-                console.error('Error saving work session:', error);
-            }
-        }
-
-        async function saveActiveSessionToSupabase() {
-            if (!supabaseClient || !currentUser) return;
-
-            try {
-                await supabaseClient
-                    .from('active_sessions')
-                    .upsert({
-                        user_id: currentUser.id,
-                        start_time: new Date(startTime).toISOString(),
-                        rate_per_second: ratePerSecond
-                    }, { onConflict: 'user_id' });
-            } catch (error) {
-                console.error('Error saving active session:', error);
-            }
-        }
-
-        async function clearActiveSessionFromSupabase() {
-            if (!supabaseClient || !currentUser) return;
-
-            try {
-                await supabaseClient
-                    .from('active_sessions')
-                    .delete()
-                    .eq('user_id', currentUser.id);
-            } catch (error) {
-                console.error('Error clearing active session:', error);
-            }
-        }
-
-        async function loadWorkSessionsFromSupabase() {
-            if (!supabaseClient || !currentUser) return [];
-
-            try {
-                const { data, error } = await supabaseClient
-                    .from('work_sessions')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-
-                return data.map(session => ({
-                    date: session.session_date,
-                    duration: session.duration_seconds,
-                    earned: session.amount_earned,
-                    id: session.id
-                }));
-            } catch (error) {
-                console.error('Error loading sessions:', error);
-                return [];
-            }
-        }
-
-        async function deleteWorkSessionFromSupabase(sessionId) {
-            if (!supabaseClient || !currentUser) return;
-
-            try {
-                await supabaseClient
-                    .from('work_sessions')
-                    .delete()
-                    .eq('id', sessionId);
-            } catch (error) {
-                console.error('Error deleting session:', error);
-            }
-        }
-
-        async function clearAllWorkSessionsFromSupabase() {
-            if (!supabaseClient || !currentUser) return;
-
-            try {
-                await supabaseClient
-                    .from('work_sessions')
-                    .delete()
-                    .eq('user_id', currentUser.id);
-            } catch (error) {
-                console.error('Error clearing sessions:', error);
-            }
-        }
-
-        async function saveThemeToSupabase(theme) {
-            if (!supabaseClient || !currentUser) return;
-
-            try {
-                await supabaseClient
-                    .from('user_preferences')
-                    .update({ theme: theme, updated_at: new Date().toISOString() })
-                    .eq('user_id', currentUser.id);
-            } catch (error) {
-                console.error('Error saving theme:', error);
-            }
-        }
-
-        // ==========================================
-        //  ORIGINAL APP VARIABLES
-        // ==========================================
-        let timerInterval;
-        let startTime;
-        let ratePerSecond;
-        let totalEarned = 0;
-
-        function startWork() {
-            const salary = parseFloat(document.getElementById('salary').value);
-            const hoursPerDay = parseFloat(document.getElementById('hoursPerDay').value);
-            const daysPerMonth = parseFloat(document.getElementById('daysPerMonth').value);
-
-            if (!salary || !hoursPerDay || !daysPerMonth) {
-                alert('Please fill in ALL information！');
-                return;
-            }
-
-            // Save these inputs to the browser's memory (fallback) or Supabase
-            if (isUserAuthenticated) {
-                saveUserPreferences(salary, hoursPerDay, daysPerMonth);
-            } else {
-                localStorage.setItem('savedSalary', salary);
-                localStorage.setItem('savedHours', hoursPerDay);
-                localStorage.setItem('savedDays', daysPerMonth);
-            }
-
-            // Calculate rate per second
-            const totalWorkSecondsPerMonth = daysPerMonth * hoursPerDay * 3600;
-            ratePerSecond = salary / totalWorkSecondsPerMonth;
-
-            // Switch screens
-            document.getElementById('inputScreen').style.display = 'none';
-            document.getElementById('timerScreen').style.display = 'block';
-
-            // Start timer
-            startTime = Date.now();
-            totalEarned = 0;
-
-            timerInterval = setInterval(updateTimer, 100);
-
-            // Save the active session so it survives a refresh!
-            if (isUserAuthenticated) {
-                saveActiveSessionToSupabase();
-            } else {
-                localStorage.setItem('activeStartTime', startTime);
-                localStorage.setItem('activeRate', ratePerSecond);
-                localStorage.setItem('activeTotalEarned', totalEarned);
-                localStorage.setItem('isWorking', 'true');
-            }
-        }
-
-        // Settings & Dark Mode Functions
-        function openSettings() {
-            // Show the modal
-            document.getElementById('settingsModal').style.display = 'flex';
-        }
-
-        function closeSettings() {
-            // Hide the modal
-            document.getElementById('settingsModal').style.display = 'none';
-        }
-
-        // Login Modal Functions
-        function openLoginModal() {
-            document.getElementById('loginModal').style.display = 'flex';
-        }
-
-        function closeLoginModal() {
-            document.getElementById('loginModal').style.display = 'none';
-        }
-
-        function showLoginInModal() {
-            document.getElementById('loginFormInModal').style.display = 'block';
-            document.getElementById('signupFormInModal').style.display = 'none';
-        }
-
-        function showSignupInModal() {
-            document.getElementById('loginFormInModal').style.display = 'none';
-            document.getElementById('signupFormInModal').style.display = 'block';
-        }
-
-        function updateNavButtons() {
-            const loginBtn = document.getElementById('loginBtn');
-            const logoutBtn = document.getElementById('logoutBtn');
-
-            if (isUserAuthenticated) {
-                loginBtn.style.display = 'none';
-                logoutBtn.style.display = 'block';
-            } else {
-                loginBtn.style.display = 'block';
-                logoutBtn.style.display = 'none';
-            }
-        }
-
-        async function toggleDarkMode() {
-            const isDark = document.getElementById('darkModeToggle').checked;
-            const theme = isDark ? 'dark' : 'light';
-
-            if (isDark) {
-                document.body.classList.add('dark-mode');
-            } else {
-                document.body.classList.remove('dark-mode');
-            }
-
-            // Save preference
-            if (isUserAuthenticated) {
-                await saveThemeToSupabase(theme);
-            } else {
-                localStorage.setItem('theme', theme);
-            }
-        }
-
-        function updateTimer() {
-            const elapsed = (Date.now() - startTime) / 1000;
-            totalEarned = elapsed * ratePerSecond;
-
-            // Update money display
-            document.getElementById('moneyDisplay').textContent = totalEarned.toFixed(4);
-
-            // Save totalEarned periodically for crash recovery (guest users only)
-            if (!isUserAuthenticated && localStorage.getItem('isWorking') === 'true') {
-                localStorage.setItem('activeTotalEarned', totalEarned);
-            }
-
-            // Update time display
-            const hours = Math.floor(elapsed / 3600);
-            const minutes = Math.floor((elapsed % 3600) / 60);
-            const seconds = Math.floor(elapsed % 60);
-            document.getElementById('timeDisplay').textContent =
-                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        }
-
-        async function stopWork() {
-            clearInterval(timerInterval);
-
-            // Clear the active session status
-            if (isUserAuthenticated) {
-                await clearActiveSessionFromSupabase();
-            } else {
-                localStorage.removeItem('activeStartTime');
-                localStorage.removeItem('activeRate');
-                localStorage.removeItem('activeTotalEarned');
-                localStorage.removeItem('isWorking');
-            }
-
-            const elapsed = (Date.now() - startTime) / 1000;
-            const hours = Math.floor(elapsed / 3600);
-            const minutes = Math.floor((elapsed % 3600) / 60);
-            const seconds = Math.floor(elapsed % 60);
-
-            // Switch to result screen
-            document.getElementById('timerScreen').style.display = 'none';
-            document.getElementById('resultScreen').style.display = 'block';
-
-            // Update result display
-            document.getElementById('resultAmount').textContent = totalEarned.toFixed(2);
-            document.getElementById('resultTime').textContent = `${hours}小时 ${minutes}分钟 ${seconds}秒`;
-            document.getElementById('resultRate').textContent = ratePerSecond.toFixed(6);
-            document.getElementById('resultEarned').textContent = totalEarned.toFixed(2);
-
-            // Save data
-            if (isUserAuthenticated) {
-                await saveWorkSessionToSupabase(elapsed, totalEarned);
-            } else {
-                saveWorkSession(elapsed, totalEarned);
-            }
-        }
-
-        async function resetTimer() {
-            document.getElementById('resultScreen').style.display = 'none';
-            document.getElementById('inputScreen').style.display = 'block';
-            totalEarned = 0;
-
-            // Ensure memory is cleared if they reset
-            if (isUserAuthenticated) {
-                await clearActiveSessionFromSupabase();
-            } else {
-                localStorage.removeItem('activeStartTime');
-                localStorage.removeItem('activeRate');
-                localStorage.removeItem('activeTotalEarned');
-                localStorage.removeItem('isWorking');
-            }
-        }
-
-        function saveWorkSession(durationSeconds, earnedAmount) {
-            let history = JSON.parse(localStorage.getItem('workHistory')) || [];
-            
-            const today = new Date();
-            const dateString = `${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
-
-            history.push({
-                date: dateString,
-                duration: durationSeconds,
-                earned: earnedAmount
-            });
-
-            localStorage.setItem('workHistory', JSON.stringify(history));
-        }
-
-        async function viewHistory() {
-            document.getElementById('inputScreen').style.display = 'none';
-            document.getElementById('resultScreen').style.display = 'none';
-            document.getElementById('historyScreen').style.display = 'block';
-
-            let history = [];
-
-            if (isUserAuthenticated) {
-                history = await loadWorkSessionsFromSupabase();
-            } else {
-                history = JSON.parse(localStorage.getItem('workHistory')) || [];
-            }
-
-            let totalSecs = 0;
-            let totalMoney = 0;
-            let uniqueDays = new Set();
-            let historyHtml = '';
-
-            // Reverse to show the newest entries at the top
-            history.slice().reverse().forEach((session, reversedIndex) => {
-                totalSecs += session.duration;
-                totalMoney += session.earned;
-                uniqueDays.add(session.date);
-
-                const h = Math.floor(session.duration / 3600);
-                const m = Math.floor((session.duration % 3600) / 60);
-
-                // For Supabase, use session.id; for localStorage, use original index
-                const deleteParam = isUserAuthenticated ? `'${session.id}'` : history.length - 1 - reversedIndex;
-
-                historyHtml += `
-                    <div class="history-item">
-                        <span style="flex: 1;">📅 ${session.date}</span>
-                        <span style="flex: 1; text-align: center;">⏱️ ${h}h ${m}m</span>
-                        <span style="flex: 1; text-align: right; color:#11998e; font-weight:bold;">RM ${session.earned.toFixed(4)}</span>
-                        <button class="delete-btn" onclick="deleteRecord(${deleteParam})" title="Delete this shift">❌</button>
-                    </div>
-                `;
-            });
-
-            // Update the top stats boxes
-            document.getElementById('totalDays').textContent = uniqueDays.size;
-
-            const totalH = Math.floor(totalSecs / 3600);
-            const totalM = Math.floor((totalSecs % 3600) / 60);
-            document.getElementById('totalHours').textContent = `${totalH}h ${totalM}m`;
-
-            document.getElementById('totalMoney').textContent = totalMoney.toFixed(4);
-
-            // Populate the list
-            const listContainer = document.getElementById('historyList');
-            const clearAllBtn = document.getElementById('clearAllBtn');
-
-            if(historyHtml === '') {
-                listContainer.innerHTML = '<p style="text-align:center; padding: 20px; color: #666;">No history yet</p>';
-                clearAllBtn.style.display = 'none';
-            } else {
-                listContainer.innerHTML = historyHtml;
-                clearAllBtn.style.display = 'block';
-            }
-        }
-
-        function goHomeFromHistory() {
-            document.getElementById('historyScreen').style.display = 'none';
-            document.getElementById('inputScreen').style.display = 'block';
-        }
-
-        async function clearHistory() {
-            if (confirm("Are you sure you want to clear ALL history?")) {
-                if (isUserAuthenticated) {
-                    await clearAllWorkSessionsFromSupabase();
-                } else {
-                    localStorage.removeItem('workHistory');
-                }
-                viewHistory();
-            }
-        }
-
-        // Function to delete a single specific record
-        async function deleteRecord(identifier) {
-            if (confirm("Are you sure you want to delete this specific shift?")) {
-                if (isUserAuthenticated) {
-                    await deleteWorkSessionFromSupabase(identifier);
-                } else {
-                    let history = JSON.parse(localStorage.getItem('workHistory')) || [];
-                    history.splice(identifier, 1);
-                    localStorage.setItem('workHistory', JSON.stringify(history));
-                }
-                viewHistory();
-            }
-        }
-
-        // ==========================================
-        //  GLITTER BACKGROUND EFFECT 
-        // ==========================================
-        const canvas = document.createElement('canvas');
-        canvas.style.position = 'fixed';
-        canvas.style.top = '0';
-        canvas.style.left = '0';
-        canvas.style.width = '100vw';
-        canvas.style.height = '100vh';
-        canvas.style.zIndex = '-1'; 
-        canvas.style.pointerEvents = 'none'; 
-        document.body.appendChild(canvas);
-
-        const ctx = canvas.getContext('2d');
-        let particlesArray = [];
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2.5 + 0.5; 
-                this.speedX = Math.random() * 0.8 - 0.4; 
-                this.speedY = Math.random() * 0.8 - 0.4; 
-                this.opacity = Math.random();
-                this.fadeDirection = Math.random() < 0.5 ? 1 : -1;
-            }
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-
-                this.opacity += 0.015 * this.fadeDirection;
-                if (this.opacity >= 1) this.fadeDirection = -1;
-                if (this.opacity <= 0.1) this.fadeDirection = 1;
-
-                if (this.x < 0) this.x = canvas.width;
-                if (this.x > canvas.width) this.x = 0;
-                if (this.y < 0) this.y = canvas.height;
-                if (this.y > canvas.height) this.y = 0;
-            }
-            draw() {
-                ctx.fillStyle = `rgba(247, 240, 12, ${this.opacity})`; 
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        function initGlitter() {
-            particlesArray = [];
-            for (let i = 0; i < 150; i++) {
-                particlesArray.push(new Particle());
-            }
-        }
-
-        function animateGlitter() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let i = 0; i < particlesArray.length; i++) {
-                particlesArray[i].update();
-                particlesArray[i].draw();
-            }
-            requestAnimationFrame(animateGlitter);
-        }
-
-        initGlitter();
-        animateGlitter();
-
-        // ==========================================
-        //  AUTO-LOAD SAVED INPUTS
-        // ==========================================
-        window.addEventListener('DOMContentLoaded', async () => {
-            // Check authentication state first
-            await checkAuthState();
-
-            // Only load localStorage data if not authenticated
-            if (!isUserAuthenticated) {
-                // Load saved inputs
-                if (localStorage.getItem('savedSalary')) {
-                    document.getElementById('salary').value = localStorage.getItem('savedSalary');
-                }
-                if (localStorage.getItem('savedHours')) {
-                    document.getElementById('hoursPerDay').value = localStorage.getItem('savedHours');
-                }
-                if (localStorage.getItem('savedDays')) {
-                    document.getElementById('daysPerMonth').value = localStorage.getItem('savedDays');
-                }
-
-                // Load Dark Mode preference
-                if (localStorage.getItem('theme') === 'dark') {
-                    document.body.classList.add('dark-mode');
-                    document.getElementById('darkModeToggle').checked = true;
-                }
-
-                // Auto-resume if the browser refreshed while working!
-                if (localStorage.getItem('isWorking') === 'true') {
-                    startTime = parseInt(localStorage.getItem('activeStartTime'));
-                    ratePerSecond = parseFloat(localStorage.getItem('activeRate'));
-                    totalEarned = parseFloat(localStorage.getItem('activeTotalEarned')) || 0;
-
-                    document.getElementById('inputScreen').style.display = 'none';
-                    document.getElementById('timerScreen').style.display = 'block';
-
-                    timerInterval = setInterval(updateTimer, 100);
-                }
-            }
-        }); 
-
-    </script>
+    <script src="js/app.js?v=55"></script>
 </body>
 </html>
