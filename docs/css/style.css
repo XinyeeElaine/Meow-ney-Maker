@@ -524,12 +524,35 @@ h2 {
     94% { transform: rotate(7deg) scale(1.08); }
 }
 /* Bonus: big logo pops to screen centre, holds ~3s, then shrinks away */
+/* Custom pixel tooltip (replaces native title= popups) */
+.pixel-tip {
+    position: fixed;
+    z-index: 2000;
+    padding: 6px 10px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--btn-text);
+    background: var(--accent);
+    border: 3px solid var(--border);
+    border-radius: 5px;
+    box-shadow: 4px 4px 0 var(--shadow);
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.1s steps(2), transform 0.1s steps(2);
+}
+.pixel-tip.show { opacity: 1; transform: translateY(0); }
+
 .logo-bonus {
     position: fixed;
     top: 50%;
     left: 50%;
     width: min(240px, 60vw);
-    height: auto;
+    height: min(240px, 60vw);  /* explicit height → translate(-50%,-50%) centers on first paint, before PNG decodes */
     image-rendering: pixelated;
     border: 5px solid var(--border);
     border-radius: 14px;

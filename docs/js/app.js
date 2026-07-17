@@ -21,13 +21,15 @@ let skyColors = { cloud: '#fff7f0', spark: '#ffd98a', heart: '#ff9db0' };
 let CAT_PALETTE = { d: '#cdbb98', o: '#efe4cf', p: '#ff9db0', e: '#332f47', w: '#ffffff', b: '#332f47' };
 // Sitting kitten (3/4 view): pink-inner ears, dot eyes, whiskers, white chest+paws, tail curling up the right.
 const CAT_ROWS = [
-    "    ddd     ddd        ",
+    "      d       d        ",
+    "     dd      dd        ",
+    "    dod     dod        ",
     "   dpoodddddoopd       ",
     "   dppoooooooppd       ",
     "   doooooooooood       ",
     "   doooooooooood       ",
     "   dooowooowoood       ",
-    "ddddoooeoeoeooodddd    ",
+    " dddoooeoeoeoooddd     ",
     "   doooooooooood       ",
     "ddddooooooooooodddd    ",
     "    ddooooooodd    ddd ",
@@ -311,6 +313,7 @@ async function handleForgotPassword() {
 }
 
 async function handleLogout() {
+    if (!await showConfirm('Log out of your account?')) return;
     if (supabaseClient) {
         await supabaseClient.auth.signOut();
     }
@@ -1176,6 +1179,43 @@ function ensureChrome() {
 
 ensureChrome();
 renderIcons();
+
+// ==========================================
+//  PIXEL TOOLTIP  (one floating element; replaces native title= on hover)
+//  Delegation + lazy title→data-tip swap covers static, injected, and dynamic elements.
+// ==========================================
+(function () {
+    const tip = document.createElement('div');
+    tip.className = 'pixel-tip';
+    document.body.appendChild(tip);
+
+    function place(el) {
+        const r = el.getBoundingClientRect();
+        const t = tip.getBoundingClientRect();
+        let left = r.left + r.width / 2 - t.width / 2;
+        left = Math.max(8, Math.min(left, window.innerWidth - t.width - 8));  // clamp to viewport
+        let top = r.top - t.height - 8;
+        if (top < 8) top = r.bottom + 8;                                      // flip below if no room above
+        tip.style.left = left + 'px';
+        tip.style.top = top + 'px';
+    }
+
+    document.addEventListener('mouseover', (e) => {
+        const el = e.target.closest('[data-tip], [title]');
+        if (!el) return;
+        if (el.hasAttribute('title')) {          // move native title so the browser stops showing its own tooltip
+            el.setAttribute('data-tip', el.getAttribute('title'));
+            el.removeAttribute('title');
+        }
+        tip.textContent = el.getAttribute('data-tip');
+        tip.classList.add('show');
+        place(el);
+    });
+    document.addEventListener('mouseout', (e) => {
+        if (e.target.closest('[data-tip]')) tip.classList.remove('show');
+    });
+    document.addEventListener('click', () => tip.classList.remove('show'));   // dismiss after a button press
+})();
 
 // ==========================================
 //  TIMER TITLE — cycle playful phrases while the clock runs
