@@ -18,25 +18,26 @@ let hearts = [];
 let skyColors = { cloud: '#fff7f0', spark: '#ffd98a', heart: '#ff9db0' };
 
 // Pixel cat palette — fur/outline come from theme CSS vars (refreshed per theme).
-let CAT_PALETTE = { d: '#cdbb98', o: '#efe4cf', p: '#ff9db0', e: '#332f47', w: '#ffffff' };
-// Sitting cat: tail up the right side, two white front paws together in front.
+let CAT_PALETTE = { d: '#cdbb98', o: '#efe4cf', p: '#ff9db0', e: '#332f47', w: '#ffffff', b: '#332f47' };
+// Sitting kitten (3/4 view): pink-inner ears, dot eyes, whiskers, white chest+paws, tail curling up the right.
 const CAT_ROWS = [
-    "                ",
-    "   d      d     ",
-    "   dd    dd     ",
-    "   dpd  dpd     ",
-    "  doowwoowwood  ",
-    "  dooeeooeeood o",  // eyes + tail tip
-    "  dopoooooopodoo",  // blush + tail
-    "  dooooppoooodoo",  // nose + tail
-    "  doooooooooodoo",
-    "  doooooooooodoo",
-    "  dowwwwwwwwodoo",  // white chest + tail
-    "  dowwwwwwwwodo ",  // tail base
-    "  doowwwwwwood  ",
-    "  dooooooooood  ",
-    "  dooowwwwoood  ",  // two white front paws
-    "   ooowwwwooo   ",
+    "    ddd     ddd        ",
+    "   dpoodddddoopd       ",
+    "   dppoooooooppd       ",
+    "   doooooooooood       ",
+    "   doooooooooood       ",
+    "   dooowooowoood       ",
+    "ddddoooeoeoeooodddd    ",
+    "   doooooooooood       ",
+    "ddddooooooooooodddd    ",
+    "    ddooooooodd    ddd ",
+    "      doooood     doood",
+    "      dooooood   dooood",
+    "      doooooood dooddd ",
+    "      doooooooodood    ",
+    "      dooooooooood     ",
+    "      doodoodooddd     ",
+    "       dddddddddd      ",
 ];
 
 // Apply saved theme immediately to avoid a flash (authed users re-apply after load)
@@ -47,15 +48,132 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY && typeof supabase !== 'undefined') {
     supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Returning from a reset-password email → let the user set a new password.
-    // ponytail: prompt() is minimal; swap for an inline form if you want nicer UX.
+    // Password recovery: ask for a new password via the custom dialog.
     supabaseClient.auth.onAuthStateChange(async (event) => {
         if (event !== 'PASSWORD_RECOVERY') return;
-        const pw = prompt('Enter your new password (at least 6 characters):');
-        if (!pw || pw.length < 6) { alert('Password must be at least 6 characters.'); return; }
+        const pw = await showPrompt('Enter your new password (at least 6 characters):', { type: 'password', placeholder: '••••••••' });
+        if (!pw || pw.length < 6) { showAlert('Password must be at least 6 characters.'); return; }
         const { error } = await supabaseClient.auth.updateUser({ password: pw });
-        alert(error ? error.message : 'Password updated — you are now logged in.');
+        showAlert(error ? error.message : 'Password updated — you are now logged in.');
     });
 }
+
+// ==========================================
+//  CUSTOM DIALOG  (in-page replacement for alert/confirm/prompt)
+//  JS-injected so all pages get it from this shared script — no per-page HTML.
+// ==========================================
+// Front-facing "questioning" cat — eyes look straight at the user. Colors reuse CAT_PALETTE.
+const THINK_CAT_ROWS = [
+    "                ",
+    "   d         d   ",
+    "  dwd       dwd ",
+    "  dowd     dwod ",
+    " dopowdddddwopod",
+    " doppowwwwwoppod",
+    " doooooooooooood",
+    " doooooooooooood ",
+    "doobbbooooobbbood ",
+    "dobwwbbooobwwbbod",
+    "dobwbbbooobwbbbod",
+    "dobbbwbooobbbwbod",
+    "doobbbooooobbbood",
+    "dooooooopoooooood",
+    " dooooopopoooood ",
+    "  doooooooooood  ",
+    "   ddddddddddd   "               
+];
+function pixelSprite(rows, palette, widthPx) {
+    const w = Math.max(...rows.map(r => r.length));  // tolerate ragged rows so hand-edits don't clip
+    let rects = '';
+    rows.forEach((row, y) => {
+        for (let x = 0; x < row.length; x++) {
+            const c = row[x];
+            if (c === ' ') continue;
+            rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${palette[c]}"/>`;
+        }
+    });
+    return `<svg viewBox="0 0 ${w} ${rows.length}" width="${widthPx}" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg" style="image-rendering:pixelated">${rects}</svg>`;
+}
+
+function showDialog({ title = '', message = '', input = null, okText = 'OK', cancelText = null, cat = false }) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.style.display = 'flex';
+
+        const box = document.createElement('div');
+        box.className = 'modal-content modal-small';
+
+        if (title) {
+            const h = document.createElement('h2');
+            h.textContent = title;
+            box.appendChild(h);
+        }
+        if (message) {
+            const p = document.createElement('p');
+            p.style.margin = '10px 0 18px';
+            p.textContent = message;
+            box.appendChild(p);
+        }
+
+        if (cat) {
+            refreshCatColors();  // pull theme fur/outline into CAT_PALETTE
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'display:flex;justify-content:center;margin:2px 0 16px;';
+            wrap.innerHTML = pixelSprite(THINK_CAT_ROWS, CAT_PALETTE, 120);
+            box.appendChild(wrap);
+        }
+
+        let field = null;
+        if (input) {
+            const group = document.createElement('div');
+            group.className = 'input-group';           // reuse existing input styling
+            field = document.createElement('input');
+            field.type = input.type || 'text';
+            field.placeholder = input.placeholder || '';
+            group.appendChild(field);
+            box.appendChild(group);
+        }
+
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.gap = '10px';
+
+        const close = (val) => { document.removeEventListener('keydown', onKey); overlay.remove(); resolve(val); };
+
+        if (cancelText) {
+            const cancel = document.createElement('button');
+            cancel.className = 'btn';
+            cancel.style.flex = '1';
+            cancel.textContent = cancelText;
+            cancel.onclick = () => close(input ? null : false);
+            row.appendChild(cancel);
+        }
+        const ok = document.createElement('button');
+        ok.className = 'btn btn-start';
+        ok.style.flex = '1';
+        ok.style.width = 'auto';
+        ok.textContent = okText;
+        ok.onclick = () => close(input ? field.value : true);
+        row.appendChild(ok);
+
+        box.appendChild(row);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+
+        const onKey = (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); ok.click(); }
+            else if (e.key === 'Escape') { close(input ? null : false); }
+        };
+        document.addEventListener('keydown', onKey);
+        (field || ok).focus();
+    });
+}
+
+// alert → showAlert (await optional); confirm → await showConfirm; prompt → await showPrompt
+const showAlert   = (message, title = '') => showDialog({ title, message, okText: 'OK' });
+const showConfirm = (message, title = '') => showDialog({ title, message, cat: true, okText: 'Yes', cancelText: 'Cancel' });
+const showPrompt  = (message, opts = {})  => showDialog({ message, cat: true, input: { type: opts.type || 'text', placeholder: opts.placeholder || '' }, okText: 'OK', cancelText: 'Cancel' });
 
 // ==========================================
 //  AUTHENTICATION FUNCTIONS
@@ -63,13 +181,13 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY && typeof supabase !== 'undefined') {
 async function handleLoginWithEmailPassword(email, password, messageDiv = null) {
     if (!supabaseClient) {
         if (messageDiv) messageDiv.textContent = 'Supabase not configured. Please contact administrator.';
-        else alert('Supabase not configured. Please contact administrator.');
+        else showAlert('Supabase not configured. Please contact administrator.');
         return;
     }
 
     if (!email || !password) {
         if (messageDiv) messageDiv.textContent = 'Please fill in all fields';
-        else alert('Please fill in all fields');
+        else showAlert('Please fill in all fields');
         return;
     }
 
@@ -90,7 +208,7 @@ async function handleLoginWithEmailPassword(email, password, messageDiv = null) 
 
     } catch (error) {
         if (messageDiv) messageDiv.textContent = error.message;
-        else alert(error.message);
+        else showAlert(error.message);
     }
 }
 
@@ -110,19 +228,19 @@ function handleLoginFromModal() {
 async function handleSignupWithEmailPassword(email, password, messageDiv = null) {
     if (!supabaseClient) {
         if (messageDiv) messageDiv.textContent = 'Supabase not configured. Please contact administrator.';
-        else alert('Supabase not configured. Please contact administrator.');
+        else showAlert('Supabase not configured. Please contact administrator.');
         return;
     }
 
     if (!email || !password) {
         if (messageDiv) messageDiv.textContent = 'Please fill in all fields';
-        else alert('Please fill in all fields');
+        else showAlert('Please fill in all fields');
         return;
     }
 
     if (password.length < 6) {
         if (messageDiv) messageDiv.textContent = 'Password must be at least 6 characters';
-        else alert('Password must be at least 6 characters');
+        else showAlert('Password must be at least 6 characters');
         return;
     }
 
@@ -154,7 +272,7 @@ async function handleSignupWithEmailPassword(email, password, messageDiv = null)
 
     } catch (error) {
         if (messageDiv) messageDiv.textContent = error.message;
-        else alert(error.message);
+        else showAlert(error.message);
     }
 }
 
@@ -172,24 +290,24 @@ function handleSignupFromModal() {
 }
 
 async function handleGoogleLogin() {
-    if (!supabaseClient) { alert('Supabase not configured. Please contact administrator.'); return; }
+    if (!supabaseClient) { showAlert('Supabase not configured. Please contact administrator.'); return; }
     // Redirect to Google, then back to this page — getSession() picks up the session on return.
     const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: window.location.origin + window.location.pathname },
     });
-    if (error) alert(error.message);
+    if (error) showAlert(error.message);
 }
 
 async function handleForgotPassword() {
-    if (!supabaseClient) { alert('Supabase not configured. Please contact administrator.'); return; }
+    if (!supabaseClient) { showAlert('Supabase not configured. Please contact administrator.'); return; }
     const email = document.getElementById('loginEmailModal').value;
-    if (!email) { alert('Type your email above first, then tap "Forgot password".'); return; }
+    if (!email) { showAlert('Type your email above first, then tap "Forgot password".'); return; }
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
         redirectTo: window.location.origin + window.location.pathname,
     });
-    if (error) alert(error.message);
-    else alert('Password reset link sent. Check your email.');
+    if (error) showAlert(error.message);
+    else showAlert('Password reset link sent. Check your email.');
 }
 
 async function handleLogout() {
@@ -425,7 +543,7 @@ function startWork() {
     const daysPerMonth = parseFloat(document.getElementById('daysPerMonth').value);
 
     if (!salary || !hoursPerDay || !daysPerMonth) {
-        alert('Please fill in ALL fields!');
+        showAlert('Please fill in ALL fields!');
         return;
     }
 
@@ -692,7 +810,7 @@ function goHomeFromHistory() {
 }
 
 async function clearHistory() {
-    if (confirm("Are you sure you want to clear ALL history?")) {
+    if (await showConfirm("Are you sure you want to clear ALL history?")) {
         if (isUserAuthenticated) {
             await clearAllWorkSessionsFromSupabase();
         } else {
@@ -704,7 +822,7 @@ async function clearHistory() {
 
 // Function to delete a single specific record
 async function deleteRecord(identifier) {
-    if (confirm("Are you sure you want to delete this specific shift?")) {
+    if (await showConfirm("Are you sure you want to delete this specific shift?")) {
         if (isUserAuthenticated) {
             await deleteWorkSessionFromSupabase(identifier);
         } else {
@@ -900,7 +1018,7 @@ function renderCat() {
             rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${CAT_PALETTE[c]}"/>`;
         }
     });
-    el.innerHTML = `<svg viewBox="0 0 16 16" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`;
+    el.innerHTML = `<svg viewBox="0 0 ${CAT_ROWS[0].length} ${CAT_ROWS.length}" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`;
 }
 renderCat();
 
