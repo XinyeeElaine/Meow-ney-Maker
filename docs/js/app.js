@@ -305,26 +305,13 @@ async function handleForgotPassword() {
     if (!supabaseClient) { showAlert('Supabase not configured. Please contact administrator.'); return; }
     const email = document.getElementById('loginEmailModal').value;
     if (!email) { showAlert('Type your email above first, then tap "Forgot password".'); return; }
-
-    // Send a 6-digit code (not a reset link). shouldCreateUser:false so an
-    // unknown email can't be signed up or enumerated via this flow.
-    const { error: sendErr } = await supabaseClient.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: false },
+    // Sends a recovery link. On return, onAuthStateChange PASSWORD_RECOVERY
+    // prompts for the new password.
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + window.location.pathname,
     });
-    if (sendErr) { showAlert(sendErr.message); return; }
-
-    const code = await showPrompt('Enter the 6-digit code sent to your email:', { placeholder: '123456' });
-    if (!code) return;
-    const { error: verifyErr } = await supabaseClient.auth.verifyOtp({
-        email, token: code.trim(), type: 'email',
-    });
-    if (verifyErr) { showAlert(verifyErr.message); return; }
-
-    const pw = await showPrompt('Enter your new password (at least 6 characters):', { type: 'password', placeholder: '••••••••' });
-    if (!pw || pw.length < 6) { showAlert('Password must be at least 6 characters.'); return; }
-    const { error: updErr } = await supabaseClient.auth.updateUser({ password: pw });
-    showAlert(updErr ? updErr.message : 'Password updated — you are now logged in.');
+    if (error) showAlert(error.message);
+    else showAlert('Password reset link sent. Check your email.');
 }
 
 async function handleLogout() {
