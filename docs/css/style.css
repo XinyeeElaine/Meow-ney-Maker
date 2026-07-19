@@ -812,3 +812,33 @@ h2 {
 .dot-mint     { background: linear-gradient(135deg, #bff0d5 0%, #3fc389 100%); }
 .dot-lavender { background: linear-gradient(135deg, #e0c8ff 0%, #b17ceb 100%); }
 .dot-midnight { background: linear-gradient(135deg, #3e3145 0%, #ff9db0 100%); }
+
+/* ==========================================
+   MOBILE
+   ========================================== */
+@media (max-width: 600px) {
+    body { padding: 74px 12px 32px; }
+
+    /* Nav: drop brand text, shrink logo/tabs so one row fits; tabs scroll if tight */
+    .top-nav { height: 58px; padding: 0 12px; gap: 8px; }
+    .nav-left { gap: 12px; flex: 0 0 auto; }
+    .nav-right { gap: 8px; flex: 0 0 auto; }
+    .brand { display: none; }
+    .nav-logo { width: 36px; height: 36px; }
+    .nav-tabs { gap: 4px; flex: 1 1 auto; justify-content: flex-start; }
+    .nav-tab { font-size: 12px; padding: 6px 8px; }
+
+    .container { padding: 26px 18px; }
+    .modal-content { padding: 22px 18px; }
+    #inputScreen h1 { margin-top: -56px; }
+
+    .cat-sprite { width: 112px; height: 112px; }
+    .history-stats { padding: 12px; gap: 6px; }
+    .stat-box span { font-size: 1.05em; }
+    .history-item { font-size: 0.82em; gap: 8px; }
+}
+
+@media (max-width: 360px) {
+    .nav-tab { font-size: 11px; padding: 5px 6px; }
+    .container { padding: 22px 14px; }
+}
