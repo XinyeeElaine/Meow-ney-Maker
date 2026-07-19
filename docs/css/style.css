@@ -67,6 +67,7 @@
 :root, :root[data-theme="midnight"] {
     --font-pixel: 'Press Start 2P', 'Pixelify Sans', monospace;
     --font-body: 'Pixelify Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'Space Mono', ui-monospace, monospace;
 
     --bg: #241a2a;
     --bg-grad: linear-gradient(180deg, #2c2033 0%, #241a2a 55%, #1c141f 100%);
@@ -139,6 +140,8 @@ h1 {
 
 /* Input-screen title floats as a pixel badge above the card */
 #inputScreen h1 {
+    font-size: 1.0rem;
+    word-spacing: 0.15em;
     display: inline-block;
     background: var(--surface);
     border: 3px solid var(--border);
@@ -224,6 +227,7 @@ h2 {
     box-shadow: inset 3px 3px 0 rgba(0, 0, 0, 0.05);
     transition: box-shadow 0.15s;
 }
+.input-group input[type="number"] { font-family: var(--font-mono); }
 .input-group input::placeholder { color: var(--text-dim); opacity: 0.6; }
 .input-group input:focus {
     outline: none;
@@ -312,7 +316,7 @@ h2 {
 }
 
 .money-display {
-    font-family: 'VT323', var(--font-body);
+    font-family: var(--font-mono), var(--font-body);
     font-weight: 400;
     font-size: 3.4rem;
     letter-spacing: 1px;
@@ -337,6 +341,10 @@ h2 {
     font-weight: 600;
 }
 
+.time-display span {
+    font-family: var(--font-mono);
+}
+
 .rate-info {
     background: var(--surface-2);
     padding: 15px;
@@ -348,7 +356,7 @@ h2 {
 }
 
 .result-amount {
-    font-family: 'VT323', var(--font-body);
+    font-family: var(--font-mono), var(--font-body);
     font-weight: 400;
     font-size: 3.4rem;
     letter-spacing: 1px;
@@ -376,7 +384,7 @@ h2 {
     box-shadow: 4px 4px 0 var(--shadow);
 }
 .result-details p { margin: 10px 0; color: var(--text-dim); }
-.result-details strong { color: var(--text); }
+.result-details strong { color: var(--text); font-family: var(--font-mono); }
 
 .celebration { font-size: 2em; margin: 10px 0; }
 
@@ -398,7 +406,7 @@ h2 {
 
 .stat-box { text-align: center; min-width: 0; }
 .stat-box span {
-    font-family: var(--font-body);
+    font-family: var(--font-mono);
     display: block;
     font-size: 1.25em;
     font-weight: 700;
@@ -424,14 +432,18 @@ h2 {
     background: var(--surface-2);
 }
 
+.container:has(#historyScreen[style*="block"]) { max-width: 580px; }
+
 .history-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
     padding: 12px 10px;
     border-bottom: 2px dashed var(--border);
     font-size: 0.9em;
     color: var(--text);
+    font-family: var(--font-mono);
 }
 .history-item:last-child { border-bottom: none; }
 

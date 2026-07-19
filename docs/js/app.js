@@ -305,11 +305,26 @@ async function handleForgotPassword() {
     if (!supabaseClient) { showAlert('Supabase not configured. Please contact administrator.'); return; }
     const email = document.getElementById('loginEmailModal').value;
     if (!email) { showAlert('Type your email above first, then tap "Forgot password".'); return; }
-    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + window.location.pathname,
+
+    // Send a 6-digit code (not a reset link). shouldCreateUser:false so an
+    // unknown email can't be signed up or enumerated via this flow.
+    const { error: sendErr } = await supabaseClient.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false },
     });
-    if (error) showAlert(error.message);
-    else showAlert('Password reset link sent. Check your email.');
+    if (sendErr) { showAlert(sendErr.message); return; }
+
+    const code = await showPrompt('Enter the 6-digit code sent to your email:', { placeholder: '123456' });
+    if (!code) return;
+    const { error: verifyErr } = await supabaseClient.auth.verifyOtp({
+        email, token: code.trim(), type: 'email',
+    });
+    if (verifyErr) { showAlert(verifyErr.message); return; }
+
+    const pw = await showPrompt('Enter your new password (at least 6 characters):', { type: 'password', placeholder: '••••••••' });
+    if (!pw || pw.length < 6) { showAlert('Password must be at least 6 characters.'); return; }
+    const { error: updErr } = await supabaseClient.auth.updateUser({ password: pw });
+    showAlert(updErr ? updErr.message : 'Password updated — you are now logged in.');
 }
 
 async function handleLogout() {
@@ -777,9 +792,9 @@ async function viewHistory() {
 
         historyHtml += `
             <div class="history-item">
-                <span style="flex: 1;">${pix('calendar')} ${session.date}</span>
-                <span style="flex: 1; text-align: center;">${pix('clock')} ${h}h ${m}m</span>
-                <span style="flex: 1; text-align: right; color:var(--accent); font-weight:bold;">RM ${session.earned.toFixed(4)}</span>
+                <span style="flex: 1.5; white-space: nowrap;">${pix('calendar')} ${session.date}</span>
+                <span style="flex: 1; text-align: center; white-space: nowrap;">${pix('clock')} ${h}h ${m}m</span>
+                <span style="flex: 1.1; text-align: right; white-space: nowrap; color:var(--accent); font-weight:bold;">RM ${session.earned.toFixed(4)}</span>
                 <button class="delete-btn" onclick="deleteRecord(${deleteParam})" title="Delete this shift">${pix('cross')}</button>
             </div>
         `;
@@ -1038,6 +1053,7 @@ const ICONS = {
     login:    ["..yyyy..","..y..y..","..y..y..","..yyyy..","...y....","...y....","...yy...","...y...."],
     logout:   ["c.......","c...c...","c....c..","c.ccccc.","c....c..","c...c...","c.......","c......."],
     coin:     ["..yyyy..",".ywwyyy.","yyyyyyyy","yyy..yyy","yyy..yyy","yyyyyyyy",".yyyyyy.","..yyyy.."],
+    moneybag: ["...kk...","..yyyy..",".yyyyyy.","yyygggyy","yyyggyyy","yyyyggyy","yyygggyy",".yyyyyy."],
     clock:    ["..kkkk..",".kwwwwk.","kwwkwwwk","kwwkwwwk","kwwkkwwk","kwwwwwwk",".kwwwwk.","..kkkk.."],
     calendar: [".k....k.","rrrrrrrr","rrrrrrrr","wwwwwwww","wkkwkkww","wwwwwwww","wkkwkkww","wwwwwwww"],
     star:     ["...y....","..yyy...",".yyyyy..","yyyyyyyy",".yyyyy..","..yyy...","...y....","........"],
