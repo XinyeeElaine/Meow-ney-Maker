@@ -51,12 +51,28 @@ if (SUPABASE_URL && SUPABASE_ANON_KEY && typeof supabase !== 'undefined') {
 
     // Returning from a reset-password email → let the user set a new password.
     // Password recovery: ask for a new password via the custom dialog.
-    supabaseClient.auth.onAuthStateChange(async (event) => {
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
         if (event !== 'PASSWORD_RECOVERY') return;
         const pw = await showPrompt('Enter your new password (at least 6 characters):', { type: 'password', placeholder: '••••••••' });
-        if (!pw || pw.length < 6) { showAlert('Password must be at least 6 characters.'); return; }
+        // Cancel / too short → sign out so the recovery session can't be used to
+        // slip into the app on a later refresh without changing the password.
+        if (!pw || pw.length < 6) {
+            if (pw) showAlert('Password must be at least 6 characters.');
+            await supabaseClient.auth.signOut();
+            history.replaceState(null, '', window.location.pathname);
+            updateNavButtons();
+            return;
+        }
         const { error } = await supabaseClient.auth.updateUser({ password: pw });
-        showAlert(error ? error.message : 'Password updated — you are now logged in.');
+        if (error) { showAlert(error.message); return; }
+        showAlert('Password updated — you are now logged in.');
+        // Password changed: now it's safe to enter the app.
+        currentUser = session?.user || currentUser;
+        isUserAuthenticated = true;
+        history.replaceState(null, '', window.location.pathname);  // strip recovery hash
+        await loadUserData();
+        showMainApp();
+        updateNavButtons();
     });
 }
 
@@ -337,6 +353,16 @@ function showMainApp() {
 async function checkAuthState() {
     if (!supabaseClient) {
         // Supabase not configured, show main app
+        const inp = document.getElementById('inputScreen');
+        if (inp) inp.style.display = 'block';
+        updateNavButtons();
+        return;
+    }
+
+    // Returning from a password-recovery email: the recovery link creates a
+    // session, but we must NOT auto-login. The PASSWORD_RECOVERY handler drives
+    // the reset and only enters the app after the password is actually changed.
+    if (window.location.hash.includes('type=recovery')) {
         const inp = document.getElementById('inputScreen');
         if (inp) inp.style.display = 'block';
         updateNavButtons();
