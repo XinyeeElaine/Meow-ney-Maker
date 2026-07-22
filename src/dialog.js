@@ -38,7 +38,7 @@ const HAPPY_CAT_ROWS = [
   "doooboooooooboood ",
   "doooboooooooboood",
   "doooboooooooboood",
-  "dobbooboboboobbod",
+  "doppoobobobooppod",
   "doooooobobooooood",
   "doooooooooooooood",
   " doooooooooooood ",
