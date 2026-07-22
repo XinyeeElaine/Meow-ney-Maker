@@ -20,10 +20,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: node src/calc.test.mjs
+
+      # Vite inlines VITE_* into the bundle at build time, so these must be set
+      # here, not at runtime. Missing secrets are not fatal: the Supabase client
+      # falls back to null and the app runs on localStorage.
+      - name: Build
+        env:
+          # Secret names stay as they are; only the env var Vite reads needs VITE_.
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: npm run build
+
       - name: Upload to GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./docs
+          path: ./dist
 
       - name: Deploy to GitHub Pages
         id: deployment

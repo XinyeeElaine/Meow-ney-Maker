@@ -10,3 +10,8 @@ node_modules/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Vite build output + local env
+dist/
+.env
+.env.local
