@@ -2,8 +2,9 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  // GitHub Pages project site lives at /Meow-ney-Maker/, not the domain root.
-  // Wrong value here = every asset 404s on deploy while localhost looks fine.
-  base: '/Meow-ney-Maker/',
+  // Served from the root of the custom domain (meow-ney.sillycookie.me), not from
+  // /Meow-ney-Maker/. If the custom domain is ever dropped and the site falls back
+  // to xinyeeelaine.github.io/Meow-ney-Maker/, this must become '/Meow-ney-Maker/'.
+  base: '/',
   plugins: [react()],
 })
