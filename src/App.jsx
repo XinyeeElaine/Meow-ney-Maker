@@ -8,7 +8,7 @@ import { supabase } from './supabase.js'
 import { loadPreferences, saveTheme } from './db.js'
 import { showAlert, showPrompt } from './dialog.js'
 
-// Placeholder for the pages that were "Coming soon" stubs in docs/.
+// Placeholder for the pages that were "Coming soon" stubs in the old site.
 const Soon = ({ title }) => (
   <div className="container">
     <h1>{title} <Pix name="chart" /></h1>

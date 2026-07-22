@@ -1,4 +1,4 @@
-// Pixel visuals + theme, ported from docs/js/app.js.
+// Pixel visuals + theme, ported from the original vanilla app.
 // Sprite data and the sky canvas are unchanged — only the DOM plumbing is React now.
 
 // ==========================================

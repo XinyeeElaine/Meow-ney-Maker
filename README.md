@@ -18,4 +18,16 @@ when it's time to clock out!
 <br>
 
 🛠️ **Tech Stack:**
-Built with pure HTML, CSS, and Vanilla JavaScript. No frameworks, just pure feline motivation.
+React + Vite, with Supabase for auth and storage. Every sprite is hand-drawn pixel art rendered as inline SVG — no image assets, just pure feline motivation.
+
+<br>
+
+🐾 **Running it locally:**
+
+```bash
+npm install
+cp .env.example .env   # fill in your Supabase URL and anon key
+npm run dev
+```
+
+`npm run build` outputs to `dist/`. Signed-in users sync to Supabase; guests fall back to local storage.

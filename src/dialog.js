@@ -1,4 +1,4 @@
-// In-page replacement for alert/confirm/prompt, ported from docs/js/app.js.
+// In-page replacement for alert/confirm/prompt, ported from the original vanilla app.
 // Deliberately imperative + promise-based rather than a React component: callers
 // `await` a value inline, which React state would turn into a callback maze.
 import { catPalette, iconSvg } from './pixel.jsx'

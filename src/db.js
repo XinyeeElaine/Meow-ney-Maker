@@ -1,4 +1,4 @@
-// Supabase reads/writes, ported from docs/js/app.js. Table names, columns and
+// Supabase reads/writes, ported from the original vanilla app. Table names, columns and
 // onConflict keys are unchanged — the existing schema and rows keep working.
 import { supabase } from './supabase.js'
 import { showAlert } from './dialog.js'
