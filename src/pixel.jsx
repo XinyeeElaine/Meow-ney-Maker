@@ -45,6 +45,7 @@ const ICONS = {
   cross:    ["r......r","rr....rr",".rr..rr.","..rrrr..","..rrrr..",".rr..rr.","rr....rr","r......r"],
   paw:      ["pp.pp.pp","pp.pp.pp","........",".pppppp.","pppppppp","pppppppp",".pppppp.","..pppp.."],
   google:   ["..bbbb..",".b....r.",".b......",".b..yyy.",".b....y.",".g....y.","..gggg..","........"],
+  user:     ["..cccc..",".cccccc.",".cccccc.","..cccc..","........","..cccc..",".cccccc.","cccccccc"],
   eye:      ["........","..kkkk..",".kwwwwk.","kwwkkwwk","kwwkkwwk",".kwwwwk.","..kkkk..","........"],
   eyeOff:   ["........","........","k......k",".kkkkkk.","k.k..k.k","........","........","........"],
 }

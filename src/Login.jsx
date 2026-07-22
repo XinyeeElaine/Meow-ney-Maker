@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Pix, iconSvg } from './pixel.jsx'
+import { Pix } from './pixel.jsx'
+import PasswordField from './PasswordField.jsx'
 import { supabase } from './supabase.js'
 import { showAlert, showDialog } from './dialog.js'
 
@@ -9,27 +10,6 @@ const NOT_CONFIGURED = 'Supabase not configured. Please contact administrator.'
 // route after '#', which Supabase strips when it appends its own hash — so send
 // users to the bare path and let the app route to the timer.
 const redirectTo = () => window.location.origin + window.location.pathname
-
-// type="password" toggling to "text" is the whole trick — no value is re-rendered,
-// so the browser's password manager still recognises the field.
-function PasswordField({ value, onChange }) {
-  const [shown, setShown] = useState(false)
-  return (
-    <div className="input-group">
-      <label><Pix name="lock" /> Password</label>
-      <div className="pw-wrap">
-        <input type={shown ? 'text' : 'password'} value={value} onChange={onChange}
-               placeholder="••••••••" />
-        <button type="button" className="pw-toggle"
-                onClick={() => setShown(!shown)}
-                title={shown ? 'Hide password' : 'Show password'}
-                aria-label={shown ? 'Hide password' : 'Show password'}
-                aria-pressed={shown}
-                dangerouslySetInnerHTML={{ __html: iconSvg(shown ? 'eyeOff' : 'eye') }} />
-      </div>
-    </div>
-  )
-}
 
 export default function Login({ onClose, onAuthed }) {
   const [mode, setMode] = useState('login')
@@ -117,7 +97,8 @@ export default function Login({ onClose, onAuthed }) {
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                      placeholder="your@email.com" />
             </div>
-            <PasswordField value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordField autoComplete="current-password"
+                           value={password} onChange={(e) => setPassword(e.target.value)} />
             <button className="btn btn-start" onClick={handleLogin}>Login</button>
             <p style={{ marginTop: 12 }}>
               <a href="#" className="link-accent" onClick={handleForgotPassword}>Forgot password?</a>
@@ -136,7 +117,8 @@ export default function Login({ onClose, onAuthed }) {
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                      placeholder="your@email.com" />
             </div>
-            <PasswordField value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordField autoComplete="new-password"
+                           value={password} onChange={(e) => setPassword(e.target.value)} />
             <button className="btn btn-start" onClick={handleSignup}>Sign Up</button>
             <p style={{ marginTop: 15 }}>
               Already have an account?{' '}

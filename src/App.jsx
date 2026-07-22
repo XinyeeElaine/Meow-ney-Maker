@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom'
 import Nav from './Nav.jsx'
 import Timer from './Timer.jsx'
 import Login from './Login.jsx'
+import Profile from './Profile.jsx'
 import { Pix, applyTheme, currentTheme } from './pixel.jsx'
 import { supabase } from './supabase.js'
 import { loadPreferences, saveTheme } from './db.js'
@@ -23,6 +24,7 @@ export default function App() {
   const [theme, setTheme] = useState(currentTheme)
   const [user, setUser] = useState(null)
   const [loginOpen, setLoginOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
   // Gate the timer until the session check finishes, so a logged-in user never
   // sees a flash of guest data pulled from localStorage.
   const [ready, setReady] = useState(!supabase)
@@ -79,7 +81,7 @@ export default function App() {
   return (
     <>
       <Nav theme={theme} onTheme={onTheme} user={user}
-           onLogin={() => setLoginOpen(true)} onLogout={() => setUser(null)} />
+           onLogin={() => setLoginOpen(true)} onProfile={() => setProfileOpen(true)} />
       <Routes>
         {/* `key` remounts Timer on login/logout so it reloads from the right source. */}
         <Route path="/" element={ready ? <Timer theme={theme} user={user} key={user?.id || 'guest'} /> : null} />
@@ -89,6 +91,11 @@ export default function App() {
       </Routes>
       {loginOpen && (
         <Login onClose={() => setLoginOpen(false)} onAuthed={adoptUser} />
+      )}
+      {profileOpen && user && (
+        <Profile user={user} onClose={() => setProfileOpen(false)}
+                 onUser={setUser}
+                 onLogout={() => { setUser(null); setProfileOpen(false) }} />
       )}
     </>
   )

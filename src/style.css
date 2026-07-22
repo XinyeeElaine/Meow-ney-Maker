@@ -235,6 +235,80 @@ h2 {
 }
 .input-group input[type="number"] { font-family: var(--font-mono); }
 
+/* Profile picture. image-rendering must be reset: the global `img { pixelated }`
+   rule is meant for sprites and turns a real photo into mush. */
+.avatar-center { display: flex; justify-content: center; margin: 14px 0 8px; }
+
+/* .settings-panel is text-align:left, so centre this explicitly. */
+.avatar-edit { display: flex; justify-content: center; margin-bottom: 10px; }
+
+/* A <button> that reads as a link — keeps keyboard/screen-reader semantics
+   right while looking like the other .link-accent text. The doubled class
+   outranks .link-accent, which is declared later and unsets the underline. */
+.link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-block;
+}
+.link-accent.link-btn { text-decoration: underline; }
+.link-accent.link-btn:disabled { opacity: 0.6; cursor: default; }
+.avatar {
+    width: 86px;
+    height: 86px;
+    flex: 0 0 auto;
+    object-fit: cover;
+    display: block;
+    border: 3px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 3px 3px 0 var(--shadow);
+    background: var(--surface-2);
+    image-rendering: auto;
+}
+.avatar-blank { display: flex; align-items: center; justify-content: center; color: var(--text-dim); }
+.avatar-blank svg { width: 52px; height: 52px; image-rendering: pixelated; }
+
+/* Compact controls that sit on the right of a .setting-row, like the theme dots */
+.row-btn { width: auto; margin: 0; padding: 9px 16px; font-size: 15px; flex: 0 0 auto; }
+.row-input {
+    width: 100%;
+    margin-top: 2px;
+    padding: 7px 10px;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 3px solid var(--border);
+    border-radius: 4px;
+    font-size: 15px;
+    font-family: var(--font-body);
+}
+.row-input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
+
+/* Signed-in name, sitting to the left of the profile picture in the nav */
+.nav-name {
+    font-weight: 700;
+    font-size: 0.85em;
+    color: var(--text);
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/* The picture fills the whole nav button — .nav-btn-icon's 7px padding is meant
+   for a 22px glyph and would leave a photo floating in the middle. Both classes
+   are needed: .nav-btn-icon is declared later in this file and would otherwise
+   win on source order and put the padding back. */
+.nav-btn-icon.nav-btn-avatar { padding: 0; overflow: hidden; }
+.nav-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    image-rendering: auto;
+}
+
 /* Password field with a show/hide toggle sitting inside the input's right edge */
 .pw-wrap { position: relative; }
 .pw-wrap input { padding-right: 46px; }
@@ -687,6 +761,10 @@ h2 {
 .nav-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--shadow); }
 
 .nav-btn-icon {
+    /* Fixed size (border-box) so every nav button matches, whatever is inside:
+       a 22px glyph with padding, or a photo filling the full 36px interior. */
+    width: 42px;
+    height: 42px;
     padding: 7px;
     border: 3px solid var(--border);
     border-radius: 5px;
@@ -850,6 +928,7 @@ h2 {
     .nav-left { gap: 12px; flex: 0 0 auto; }
     .nav-right { gap: 8px; flex: 0 0 auto; }
     .brand { display: none; }
+    .nav-name { display: none; }   /* one nav row on mobile; the picture is enough */
     .nav-logo { width: 36px; height: 36px; }
     .nav-tabs { gap: 4px; flex: 1 1 auto; justify-content: flex-start; }
     .nav-tab { font-size: 12px; padding: 6px 8px; }

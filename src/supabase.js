@@ -13,3 +13,10 @@ export const supabase = url && key
 
 // Dev-only handle so failing queries can be reproduced straight from the console.
 if (import.meta.env.DEV) window.__sb = supabase
+
+// Google fills in full_name/name at sign-in; a name the user typed himself wins.
+export const displayName = (user) =>
+  user?.user_metadata?.display_name
+  || user?.user_metadata?.full_name
+  || user?.user_metadata?.name
+  || ''

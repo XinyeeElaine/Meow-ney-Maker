@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { Pix, THEMES, iconSvg, triggerBonus } from './pixel.jsx'
-import { supabase } from './supabase.js'
-import { showConfirm } from './dialog.js'
+import { displayName } from './supabase.js'
 
 const TABS = [
   ['/', 'Timer'],
@@ -11,15 +10,8 @@ const TABS = [
   ['/todo', 'To-Do'],
 ]
 
-export default function Nav({ theme, onTheme, user, onLogin, onLogout }) {
+export default function Nav({ theme, onTheme, user, onLogin, onProfile }) {
   const [settingsOpen, setSettingsOpen] = useState(false)
-
-  async function handleLogout() {
-    if (!await showConfirm('Log out of your account?')) return
-    if (supabase) await supabase.auth.signOut()
-    onLogout()
-    location.reload()
-  }
 
   return (
     <>
@@ -43,10 +35,17 @@ export default function Nav({ theme, onTheme, user, onLogin, onLogout }) {
           ))}
         </nav>
         <div className="nav-right">
+          {user && displayName(user) && (
+            <span className="nav-name" title={displayName(user)}>{displayName(user)}</span>
+          )}
+          {/* Signed in the button opens the profile panel, which owns logout. */}
           {user
-            ? <button className="nav-btn-icon" onClick={handleLogout}
-                      title="Logout" aria-label="Logout"
-                      dangerouslySetInnerHTML={{ __html: iconSvg('logout') }} />
+            ? <button onClick={onProfile} title="Profile" aria-label="Profile"
+                      className={'nav-btn-icon' + (user.user_metadata?.avatar_url ? ' nav-btn-avatar' : '')}>
+                {user.user_metadata?.avatar_url
+                  ? <img src={user.user_metadata.avatar_url} className="nav-avatar" alt="" />
+                  : <span dangerouslySetInnerHTML={{ __html: iconSvg('user') }} />}
+              </button>
             : <button className="nav-btn-icon" onClick={onLogin}
                       title="Login" aria-label="Login"
                       dangerouslySetInnerHTML={{ __html: iconSvg('login') }} />}
