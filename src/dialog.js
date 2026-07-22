@@ -1,7 +1,7 @@
 // In-page replacement for alert/confirm/prompt, ported from docs/js/app.js.
 // Deliberately imperative + promise-based rather than a React component: callers
 // `await` a value inline, which React state would turn into a callback maze.
-import { catPalette } from './pixel.jsx'
+import { catPalette, iconSvg } from './pixel.jsx'
 
 // Front-facing "questioning" cat — eyes look straight at the user.
 const THINK_CAT_ROWS = [
@@ -23,6 +23,30 @@ const THINK_CAT_ROWS = [
   "  doooooooooood  ",
   "   ddddddddddd   ",
 ]
+
+// 8-bit smiley cat: vertical bar eyes, whisker bars on the cheeks, omega mouth.
+// Face mirrors about column 8, so a pixel at x pairs with one at 16 - x.
+const HAPPY_CAT_ROWS = [
+  "                ",
+  "   d         d   ",
+  "  dwd       dwd ",
+  "  dowd     dwod ",
+  " dopowdddddwopod",
+  " doppowwwwwoppod",
+  " doooooooooooood",
+  " doooooooooooood ",
+  "doooboooooooboood ",
+  "doooboooooooboood",
+  "doooboooooooboood",
+  "dobbooboboboobbod",
+  "doooooobobooooood",
+  "doooooooooooooood",
+  " doooooooooooood ",
+  "  doooooooooood  ",
+  "   ddddddddddd   ",
+]
+
+const CATS = { think: THINK_CAT_ROWS, happy: HAPPY_CAT_ROWS }
 
 function pixelSprite(rows, palette, widthPx) {
   const w = Math.max(...rows.map((r) => r.length))  // tolerate ragged rows so hand-edits don't clip
@@ -61,7 +85,8 @@ export function showDialog({ title = '', message = '', input = null, okText = 'O
     if (cat) {
       const wrap = document.createElement('div')
       wrap.style.cssText = 'display:flex;justify-content:center;margin:2px 0 16px;'
-      wrap.innerHTML = pixelSprite(THINK_CAT_ROWS, catPalette(), 120)
+      // cat: true keeps the original questioning cat; cat: 'happy' picks another.
+      wrap.innerHTML = pixelSprite(CATS[cat] || CATS.think, catPalette(), 120)
       box.appendChild(wrap)
     }
 
@@ -72,7 +97,28 @@ export function showDialog({ title = '', message = '', input = null, okText = 'O
       field = document.createElement('input')
       field.type = input.type || 'text'
       field.placeholder = input.placeholder || ''
-      group.appendChild(field)
+
+      if (field.type === 'password') {
+        // No confirm field on this prompt, so let the user check what they typed.
+        const wrap = document.createElement('div')
+        wrap.className = 'pw-wrap'
+        const toggle = document.createElement('button')
+        toggle.type = 'button'
+        toggle.className = 'pw-toggle'
+        const paint = () => {
+          const shown = field.type === 'text'
+          toggle.innerHTML = iconSvg(shown ? 'eyeOff' : 'eye')
+          toggle.title = shown ? 'Hide password' : 'Show password'
+          toggle.setAttribute('aria-label', toggle.title)
+        }
+        toggle.onclick = () => { field.type = field.type === 'password' ? 'text' : 'password'; paint() }
+        paint()
+        wrap.appendChild(field)
+        wrap.appendChild(toggle)
+        group.appendChild(wrap)
+      } else {
+        group.appendChild(field)
+      }
       box.appendChild(group)
     }
 
