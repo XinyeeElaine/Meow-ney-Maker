@@ -684,17 +684,6 @@ h2 {
 }
 .chart-labels span { flex: 1; min-width: 0; text-align: center; overflow: hidden; }
 
-.dash-report {
-    margin-top: 14px;
-    padding: 14px;
-    text-align: left;
-    white-space: pre-wrap;
-    line-height: 1.55;
-    background: var(--surface-2);
-    border: 3px solid var(--border);
-    border-radius: 5px;
-}
-
 .dash-note {
     margin: 26px 0;
     text-align: center;
@@ -1144,4 +1133,18 @@ h2 {
 @media (max-width: 360px) {
     .nav-tab { font-size: 11px; padding: 5px 6px; }
     .container { padding: 22px 14px; }
+}
+
+/* The dashboard is the report, so printing it is the PDF — the browser's
+   "Save as PDF" destination writes the file. No PDF library involved. */
+.print-only { display: none; }
+
+@media print {
+    /* Bars and the chart fill are backgrounds, which Chrome drops by default. */
+    body { background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .top-nav, .dash-action, .range-tabs, .pixel-tip, .toast { display: none; }
+    .print-only { display: block; margin-bottom: 18px; color: var(--text-dim); }
+    /* Paper is narrower than 720px, which would otherwise stack the two charts. */
+    .dash-grid { grid-template-columns: 1fr 1fr; }
+    .dashboard section, .kpi, .chart-wrap { break-inside: avoid; }
 }

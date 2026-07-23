@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Pix } from './pixel.jsx'
-import { RANGES, hm, series, summarize } from './calc.js'
+import { RANGES, hm, series, summarize, ymd } from './calc.js'
 import { loadWorkSessions } from './db.js'
-import { showAlert } from './dialog.js'
-import { supabase } from './supabase.js'
 
 // `action` is the header's top-right slot. It stays empty on the loading, guest,
 // and no-shifts states — there is nothing to report on yet.
@@ -13,6 +11,8 @@ const Frame = ({ action, children }) => (
       <h1>Dashboard <Pix name="chart" /></h1>
       {action}
     </div>
+    {/* Only on paper: a printed report needs a date on it. */}
+    <p className="print-only">Report generated {ymd()}</p>
     {children}
   </div>
 )
@@ -86,8 +86,6 @@ function BarChart({ points }) {
 export default function Dashboard({ user }) {
   const [rows, setRows] = useState(null)      // null = still loading
   const [range, setRange] = useState('week')
-  const [report, setReport] = useState('')
-  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -103,26 +101,11 @@ export default function Dashboard({ user }) {
   const s = summarize(rows)
   const recent = rows.slice(-8).reverse()     // loadWorkSessions returns oldest-first
 
-  // The key is held server-side in a Supabase Edge Function — see
-  // supabase/functions/report/index.ts. Only these numbers leave the browser.
-  async function generateReport() {
-    setBusy(true)
-    const { data, error } = await supabase.functions.invoke('report', {
-      body: {
-        stats: {
-          week: s.week, month: s.month, all: s.all, secs: s.secs,
-          days: s.days, bestEarned: s.best.earned, shifts: rows.length,
-        },
-      },
-    })
-    setBusy(false)
-    if (error || data?.error) return showAlert(`Report failed: ${error?.message || data.error}`)
-    setReport(data.text)
-  }
-
+  // The dashboard already is the report, so printing it is the PDF. The browser's
+  // "Save as PDF" destination writes the file — see the @media print block in style.css.
   const reportBtn = (
-    <button className="btn btn-blue dash-action" disabled={busy} onClick={generateReport}>
-      <Pix name="book" /> {busy ? 'Writing…' : 'Generate report'}
+    <button className="btn btn-blue dash-action" onClick={() => window.print()}>
+      <Pix name="book" /> Download PDF
     </button>
   )
 
@@ -187,13 +170,6 @@ export default function Dashboard({ user }) {
           ))}
         </div>
       </section>
-
-      {report && (
-        <section>
-          <div className="section-head"><Pix name="book" /> Report</div>
-          <p className="dash-report">{report}</p>
-        </section>
-      )}
     </Frame>
   )
 }
