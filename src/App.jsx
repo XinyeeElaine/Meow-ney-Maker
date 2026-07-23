@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import Nav from './Nav.jsx'
 import Timer from './Timer.jsx'
+import Dashboard from './Dashboard.jsx'
 import Login from './Login.jsx'
 import Profile from './Profile.jsx'
 import { Pix, applyTheme, currentTheme } from './pixel.jsx'
@@ -85,7 +86,8 @@ export default function App() {
       <Routes>
         {/* `key` remounts Timer on login/logout so it reloads from the right source. */}
         <Route path="/" element={ready ? <Timer theme={theme} user={user} key={user?.id || 'guest'} /> : null} />
-        <Route path="/dashboard" element={<Soon title="Dashboard" />} />
+        {/* Same `ready` gate as Timer, so a signed-in user never sees "Log in" flash. */}
+        <Route path="/dashboard" element={ready ? <Dashboard user={user} key={user?.id || 'guest'} /> : null} />
         <Route path="/diary" element={<Soon title="Diary" />} />
         <Route path="/todo" element={<Soon title="To-Do" />} />
       </Routes>

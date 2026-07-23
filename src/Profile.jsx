@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Pix, iconSvg } from './pixel.jsx'
 import { displayName, supabase } from './supabase.js'
-import { showAlert, showConfirm, showDialog } from './dialog.js'
+import { showAlert, showConfirm, showDialog, showToast } from './dialog.js'
 
 const MAX_BYTES = 2 * 1024 * 1024
 const MAX_NAME = 40
@@ -16,8 +16,9 @@ export default function Profile({ user, onClose, onLogout, onUser }) {
 
   async function saveMeta(patch) {
     const { data, error } = await supabase.auth.updateUser({ data: patch })
-    if (error) return showAlert(error.message)
+    if (error) { showAlert(error.message); return false }
     onUser(data.user)
+    return true
   }
 
   const saveAvatarUrl = (url) => saveMeta({ avatar_url: url })
@@ -25,7 +26,7 @@ export default function Profile({ user, onClose, onLogout, onUser }) {
   async function saveName() {
     setBusy(true)
     try {
-      await saveMeta({ display_name: name.trim() })
+      if (await saveMeta({ display_name: name.trim() })) showToast('Saved successfully!')
     } finally {
       setBusy(false)
     }

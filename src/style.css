@@ -534,6 +534,179 @@ h2 {
 
 .container:has(#historyScreen[style*="block"]) { max-width: 580px; }
 
+/* ==========================================
+   DASHBOARD
+   ========================================== */
+/* Full-bleed, not a card: the dashboard drops .container's surface, border and
+   width cap and stretches to the viewport. body keeps its 92px top padding for
+   the fixed nav, so only the card chrome is undone here. */
+.container.dashboard {
+    max-width: none;
+    align-self: stretch;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    text-align: left;
+}
+/* Title left, Generate report right. Baseline-aligned so the button sits on the
+   title's line rather than floating above it. */
+.dash-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+}
+.dash-top h1 { margin-bottom: 0; }
+.dash-action { width: auto; margin: 0; flex-shrink: 0; font-size: 16px; padding: 10px 18px; }
+
+/* Row 1: one card per KPI, spanning the width. auto-fit rather than a fixed count,
+   so the cards reflow instead of squeezing as the viewport narrows. */
+.kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+}
+.kpi {
+    padding: 16px 14px;
+    background: var(--surface-2);
+    border: 3px solid var(--border);
+    border-radius: 5px;
+    box-shadow: 4px 4px 0 var(--shadow);
+}
+
+/* Row 2: the two charts, equal halves. Sections stretch to the tallest of the
+   pair and the plot area flexes into whatever's left, so the two boxes end at
+   the same height even though only one header carries range tabs. */
+.dash-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 18px;
+    margin-bottom: 22px;
+}
+.dashboard section { margin-bottom: 22px; }
+.dash-grid section { margin-bottom: 0; display: flex; flex-direction: column; }
+.dash-grid .chart-wrap { flex: 1; }
+
+/* Every section header in the dashboard reserves the same height, whether it holds
+   just a title or a title plus range tabs — otherwise the boxes below them start at
+   different heights across a grid row. */
+.dashboard .section-head,
+.dashboard .chart-head {
+    display: flex;
+    align-items: center;
+    min-height: 32px;
+    margin-bottom: 8px;
+}
+.dashboard .chart-head { justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.dashboard .chart-head .section-head { min-height: 0; margin-bottom: 0; }
+.dashboard .history-list { margin-bottom: 0; }
+
+.range-tabs { display: flex; gap: 4px; }
+.range-tab {
+    padding: 4px 10px;
+    background: var(--surface-2);
+    color: var(--text-dim);
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    font-family: var(--font-body);
+    font-size: 0.8em;
+    cursor: pointer;
+}
+.range-tab.active { background: var(--accent); color: var(--surface); }
+
+/* Both charts are one series (earnings per bucket), so one accent colour and no
+   legend — the section heading names the series. Both also share this wrapper, so
+   the plot area and the label row below it are the same box at any width. */
+.chart-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 10px;
+    background: var(--surface-2);
+    border: 3px solid var(--border);
+    border-radius: 5px;
+    box-shadow: 4px 4px 0 var(--shadow);
+}
+.chart-peak {
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+}
+/* flex + min-height, not a fixed height: the plot takes whatever the equal-height
+   row leaves it, and preserveAspectRatio="none" lets the SVG fill that box. */
+.line-chart { display: block; width: 100%; flex: 1; min-height: 150px; }
+/* preserveAspectRatio="none" stretches strokes, so widths are pre-compensated
+   in the y direction only — vector-effect keeps them even at any width. */
+.line-stroke {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+.line-fill { fill: var(--accent); opacity: 0.16; stroke: none; }
+.line-dot { fill: var(--accent); stroke: var(--surface-2); stroke-width: 2; vector-effect: non-scaling-stroke; }
+
+/* Columns tile edge to edge — no flex gap — so a bar's centre matches the line
+   chart's band centre and the label under it. The visual gap is a 2px surface
+   border inside each bar, which doesn't move the centre. */
+.bar-chart {
+    display: flex;
+    align-items: flex-end;
+    flex: 1;
+    min-height: 150px;
+    padding-top: 20px;              /* clears the peak label in the corner */
+}
+.bar-col { flex: 1; min-width: 0; height: 100%; display: flex; align-items: flex-end; }
+.bar {
+    width: 100%;
+    background: var(--accent);
+    border-left: 2px solid var(--surface-2);
+    border-right: 2px solid var(--surface-2);
+    transition: height 0.25s steps(6);
+}
+
+/* Axis labels live in HTML, not the SVG, so they keep the page font at any width.
+   Same flex geometry as the bar columns and the line chart's bands. */
+.chart-labels {
+    display: flex;
+    padding-top: 6px;
+    font-size: 11px;
+    color: var(--text-dim);
+}
+.chart-labels span { flex: 1; min-width: 0; text-align: center; overflow: hidden; }
+
+.dash-report {
+    margin-top: 14px;
+    padding: 14px;
+    text-align: left;
+    white-space: pre-wrap;
+    line-height: 1.55;
+    background: var(--surface-2);
+    border: 3px solid var(--border);
+    border-radius: 5px;
+}
+
+.dash-note {
+    margin: 26px 0;
+    text-align: center;
+    color: var(--text-dim);
+    font-weight: 600;
+}
+
+@media (max-width: 720px) {
+    .dash-grid { grid-template-columns: 1fr; }
+    .dash-grid section { margin-bottom: 22px; }
+}
+
 .history-item {
     display: flex;
     justify-content: space-between;
@@ -805,6 +978,31 @@ h2 {
     justify-content: center;
     align-items: center;
     z-index: 1000;
+}
+
+/* Toast: above the modal it fires from, self-removing on animationend. */
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 32px;
+    z-index: 1100;
+    max-width: min(90vw, 340px);
+    padding: 12px 20px;
+    background: var(--surface);
+    color: var(--text);
+    border: 4px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 6px 6px 0 var(--shadow);
+    font-family: var(--font-body);
+    text-align: center;
+    pointer-events: none;
+    animation: toastPop 2.6s ease forwards;
+}
+
+@keyframes toastPop {
+    0%       { opacity: 0; transform: translate(-50%, 16px); }
+    10%, 85% { opacity: 1; transform: translate(-50%, 0); }
+    100%     { opacity: 0; transform: translate(-50%, 16px); }
 }
 
 .modal-content {

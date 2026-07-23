@@ -157,6 +157,16 @@ export function showDialog({ title = '', message = '', input = null, okText = 'O
   })
 }
 
+// Non-blocking confirmation: nothing to await, the CSS animation removes it.
+export function showToast(message) {
+  const el = document.createElement('div')
+  el.className = 'toast'
+  el.setAttribute('role', 'status')       // announced without stealing focus
+  el.textContent = message
+  el.onanimationend = () => el.remove()
+  document.body.appendChild(el)
+}
+
 export const showAlert = (message, title = '') => showDialog({ title, message, okText: 'OK' })
 export const showConfirm = (message, title = '') =>
   showDialog({ title, message, cat: true, okText: 'Yes', cancelText: 'Cancel' })

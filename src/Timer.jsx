@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Cat, Pix } from './pixel.jsx'
-import { clock, human, pad, ratePerSecond } from './calc.js'
+import { clock, hm, human, ratePerSecond, ymd } from './calc.js'
 import { showAlert, showConfirm } from './dialog.js'
 import * as db from './db.js'
 
@@ -119,8 +119,7 @@ export default function Timer({ theme, user }) {
     setEarned(total)
     setScreen('result')
 
-    const d = new Date()
-    const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    const date = ymd()
 
     if (user) {
       await db.clearActiveSession(user)
@@ -169,7 +168,6 @@ export default function Timer({ theme, user }) {
     { secs: 0, money: 0 },
   )
   const uniqueDays = new Set(history.map((r) => r.date)).size
-  const hm = (s) => `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`
 
   return (
     <div className="container">
