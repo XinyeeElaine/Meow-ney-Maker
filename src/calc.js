@@ -18,10 +18,8 @@ export const ymd = (d = new Date()) =>
   `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-export const RANGES = [['week', 'Week'], ['month', 'Month'], ['year', 'Year']]
+export const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 // Rolling windows, not calendar ones: a shift log reads as "the last 7 days",
 // and a Monday shouldn't wipe the week's numbers back to zero.
@@ -75,4 +73,37 @@ export function series(rows, range = 'week', today = new Date()) {
     out.push({ key, label, value: totals.get(key) || 0 })
   }
   return out
+}
+
+// Earnings for each day of a chosen calendar month, zero-filled, oldest first.
+// month is 0-11. Dates are YYYY-MM-DD strings, so a prefix match picks the month.
+export function monthSeries(rows, year, month) {
+  const days = new Date(year, month + 1, 0).getDate()   // day 0 of next month = last of this
+  const prefix = `${year}-${pad(month + 1)}-`
+  const totals = new Map()
+  for (const r of rows) {
+    if (r.date.startsWith(prefix)) totals.set(r.date, (totals.get(r.date) || 0) + r.earned)
+  }
+  const out = []
+  for (let d = 1; d <= days; d++) {
+    const key = `${prefix}${pad(d)}`
+    out.push({ key, label: String(d), value: totals.get(key) || 0 })   // every day labelled
+  }
+  return out
+}
+
+// Earnings per month (Jan..Dec) of a chosen calendar year, zero-filled.
+export function yearSeries(rows, year) {
+  const prefix = `${year}-`
+  const totals = new Map()
+  for (const r of rows) {
+    if (r.date.startsWith(prefix)) {
+      const k = r.date.slice(0, 7)                       // YYYY-MM
+      totals.set(k, (totals.get(k) || 0) + r.earned)
+    }
+  }
+  return MONTH_NAMES.map((label, m) => {
+    const key = `${year}-${pad(m + 1)}`
+    return { key, label, value: totals.get(key) || 0 }
+  })
 }

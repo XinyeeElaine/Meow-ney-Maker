@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Pix } from './pixel.jsx'
-import { RANGES, hm, series, summarize, ymd } from './calc.js'
+import { MONTH_NAMES, hm, monthSeries, pad, series, summarize, yearSeries, ymd } from './calc.js'
 import { loadWorkSessions } from './db.js'
 
 // `action` is the header's top-right slot. It stays empty on the loading, guest,
@@ -23,7 +23,8 @@ const Frame = ({ action, children }) => (
 const W = 300, H = 110, PAD = 8
 
 // One series (earnings per bucket), so one accent line — the heading names it.
-function LineChart({ points }) {
+// `peakShift` is the biggest single shift in view; `peak` (bucket max) scales the plot.
+function LineChart({ points, peakShift }) {
   const peak = Math.max(0, ...points.map((p) => p.value))
   const band = W / points.length
   // Points sit at band centres, not edge to edge: that is what the HTML label row
@@ -33,8 +34,10 @@ function LineChart({ points }) {
   const line = points.map((p, i) => `${i ? 'L' : 'M'}${x(i)},${y(p.value)}`).join(' ')
 
   return (
-    <div className="chart-wrap">
-      <span className="chart-peak">RM {peak.toFixed(2)}</span>
+    <div className="chart-wrap line-wrap">
+      <span className="chart-peak" title="Highest single shift earning">
+        Peak: RM {peakShift.toFixed(2)}
+      </span>
       <svg className="line-chart" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none"
            role="img" aria-label="Earnings over the selected range">
         <path className="line-fill" d={`${line} L${x(points.length - 1)},${H - PAD} L${x(0)},${H - PAD} Z`} />
@@ -45,8 +48,8 @@ function LineChart({ points }) {
             {points.length <= 12 && <circle className="line-dot" cx={x(i)} cy={y(p.value)} r="3" />}
             {/* Full-height hit band, so the tooltip target is bigger than the mark.
                 title= is picked up by startTooltips() and rendered as a pixel tooltip. */}
-            <rect x={x(i) - band / 2} y="0" width={band} height={H} fill="transparent"
-                  title={`${p.key} · RM ${p.value.toFixed(2)}`} />
+            <rect className="tip-mono" x={x(i) - band / 2} y="0" width={band} height={H}
+                  fill="transparent" title={`${p.key} · RM ${p.value.toFixed(2)}`} />
           </g>
         ))}
       </svg>
@@ -59,14 +62,16 @@ function LineChart({ points }) {
 
 // Same wrapper and label row as the line chart, so the two read as one system and
 // their columns line up with each other.
-function BarChart({ points }) {
+function BarChart({ points, peakShift }) {
   const peak = Math.max(0, ...points.map((p) => p.value))
   return (
     <div className="chart-wrap">
-      <span className="chart-peak">RM {peak.toFixed(2)}</span>
+      <span className="chart-peak" title="Highest single shift earning">
+        Peak: RM {peakShift.toFixed(2)}
+      </span>
       <div className="bar-chart">
         {points.map((p) => (
-          <div className="bar-col" key={p.key} title={`${p.key} · RM ${p.value.toFixed(2)}`}>
+          <div className="bar-col tip-mono" key={p.key} title={`${p.key} · RM ${p.value.toFixed(2)}`}>
             {p.value > 0 && (
               // Floor at 4% so a tiny day is still a visible mark, not a hairline.
               <div className="bar" style={{ height: `${Math.max(4, (p.value / peak) * 100)}%` }} />
@@ -81,11 +86,120 @@ function BarChart({ points }) {
   )
 }
 
+const PAGE_SIZE = 5
+
+// Clock time of an ISO stamp. Older rows predate start/end, so guard for missing.
+const hhmm = (iso) =>
+  iso ? new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'
+
+const SORTS = [
+  ['new', 'Newest first'],
+  ['old', 'Oldest first'],
+  ['high', 'Highest earning'],
+  ['low', 'Lowest earning'],
+]
+
+// rows arrive oldest-first; copy before sorting so the source array is never touched.
+function sortRows(rows, sort) {
+  const r = [...rows]
+  if (sort === 'new') return r.reverse()
+  if (sort === 'old') return r
+  return r.sort((a, b) => (sort === 'high' ? b.earned - a.earned : a.earned - b.earned))
+}
+
+// Every shift in a paged, sortable table. "Top 5" pins the five best-earning rows
+// and drops the pager, since there's nothing to page through.
+function ShiftTable({ rows }) {
+  const [sort, setSort] = useState('new')
+  const [page, setPage] = useState(1)
+  const [top5, setTop5] = useState(false)
+  const [q, setQ] = useState('')
+
+  // Substring match on the date and the RM amount, e.g. "2026-03" or "42.5".
+  const term = q.trim().toLowerCase()
+  const matched = term
+    ? rows.filter((r) => r.date.includes(term) || r.earned.toFixed(2).includes(term))
+    : rows
+  const sorted = top5 ? sortRows(rows, 'high').slice(0, 5) : sortRows(matched, sort)
+  const pages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+  const current = Math.min(page, pages)      // clamp if a filter shrank the list
+  const shown = top5 ? sorted : sorted.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE)
+
+  return (
+    <section>
+      <div className="chart-head">
+        <div className="section-head"><Pix name="coin" /> All shifts</div>
+        <div className="table-controls">
+          <button className={'range-tab top5-btn' + (top5 ? ' active' : '')}
+                  onClick={() => { setTop5(!top5); setPage(1) }}>
+            <Pix name="star" /> Top 5
+          </button>
+          <select className="table-sort" value={sort} disabled={top5}
+                  onChange={(e) => { setSort(e.target.value); setPage(1) }}>
+            {SORTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+          <input className="table-sort table-search" type="search" value={q} disabled={top5}
+                 placeholder="Search..."
+                 onChange={(e) => { setQ(e.target.value); setPage(1) }} />
+        </div>
+      </div>
+
+      <table className="shift-table">
+        <thead>
+          <tr>
+            <th>Date</th><th>Start Time</th><th>End Time</th>
+            <th>Time worked</th><th className="num">Earned (RM)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {shown.length === 0 && (
+            <tr><td colSpan="5" className="table-empty">No shifts match “{q}”.</td></tr>
+          )}
+          {shown.map((r, i) => (
+            <tr key={r.id ?? `${r.date}-${i}`}>
+              <td>{r.date}</td>
+              <td>{hhmm(r.start)}</td>
+              <td>{hhmm(r.end)}</td>
+              <td>{hm(r.duration)}</td>
+              <td className="num">{r.earned.toFixed(2)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* First, current, and last page, e.g. ‹ 1 … 5 … 10 ›. Arrows only appear
+          when there's somewhere to go, so page 1 has no ‹ and the last has no ›. */}
+      {!top5 && (
+        <div className="pager">
+          {current > 1 && (
+            <button className="pager-btn" onClick={() => setPage(current - 1)}
+                    aria-label="Previous page">‹</button>
+          )}
+          {[...new Set([1, current, pages])].sort((a, b) => a - b).map((n, i, arr) => (
+            <span key={n} style={{ display: 'contents' }}>
+              {i > 0 && n - arr[i - 1] > 1 && <span className="pager-gap">…</span>}
+              <button className={'pager-btn' + (n === current ? ' active' : '')}
+                      onClick={() => setPage(n)}>{n}</button>
+            </span>
+          ))}
+          {current < pages && (
+            <button className="pager-btn" onClick={() => setPage(current + 1)}
+                    aria-label="Next page">›</button>
+          )}
+        </div>
+      )}
+    </section>
+  )
+}
+
 // Read-only view of work_sessions. Deleting shifts stays on the Timer's history
 // screen, so there's one place that can destroy a row.
 export default function Dashboard({ user }) {
   const [rows, setRows] = useState(null)      // null = still loading
-  const [range, setRange] = useState('week')
+  const now = new Date()
+  const [view, setView] = useState('month')   // 'month' | 'year'
+  const [year, setYear] = useState(now.getFullYear())
+  const [month, setMonth] = useState(now.getMonth())
 
   useEffect(() => {
     if (!user) return
@@ -99,7 +213,19 @@ export default function Dashboard({ user }) {
   if (!rows.length) return <Frame><p className="dash-note">No shifts logged yet.</p></Frame>
 
   const s = summarize(rows)
-  const recent = rows.slice(-8).reverse()     // loadWorkSessions returns oldest-first
+
+  // Years to offer in the dropdown: every year with a shift, plus the current one
+  // so an empty new year is still selectable, newest first.
+  const years = [...new Set([now.getFullYear(), ...rows.map((r) => +r.date.slice(0, 4))])]
+    .sort((a, b) => b - a)
+
+  // Biggest single shift in a date range — the "Peak" the charts show. Not the
+  // bucket total, which can merge several shifts on one day.
+  const topShift = (prefix) =>
+    rows.reduce((m, r) => (r.date.startsWith(prefix) ? Math.max(m, r.earned) : m), 0)
+  const linePrefix = view === 'year' ? `${year}-` : `${year}-${pad(month + 1)}-`
+  const weekStart = ymd(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6))
+  const weekTopShift = rows.reduce((m, r) => (r.date >= weekStart ? Math.max(m, r.earned) : m), 0)
 
   // The dashboard already is the report, so printing it is the PDF. The browser's
   // "Save as PDF" destination writes the file — see the @media print block in style.css.
@@ -135,41 +261,35 @@ export default function Dashboard({ user }) {
           <div className="chart-head">
             <div className="section-head"><Pix name="coin" /> Earnings over time</div>
             <div className="range-tabs">
-              {RANGES.map(([key, label]) => (
-                <button key={key} onClick={() => setRange(key)}
-                        className={'range-tab' + (key === range ? ' active' : '')}>
-                  {label}
-                </button>
-              ))}
+              <button onClick={() => setView('month')}
+                      className={'range-tab' + (view === 'month' ? ' active' : '')}>Month</button>
+              <button onClick={() => setView('year')}
+                      className={'range-tab' + (view === 'year' ? ' active' : '')}>Year</button>
+              {/* Month view picks a month; both views pick a year. */}
+              {view === 'month' && (
+                <select className="table-sort" value={month} aria-label="Month"
+                        onChange={(e) => setMonth(+e.target.value)}>
+                  {MONTH_NAMES.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                </select>
+              )}
+              <select className="table-sort" value={year} aria-label="Year"
+                      onChange={(e) => setYear(+e.target.value)}>
+                {years.map((y) => <option key={y} value={y}>{y}</option>)}
+              </select>
             </div>
           </div>
-          <LineChart points={series(rows, range)} />
+          <LineChart peakShift={topShift(linePrefix)}
+                     points={view === 'year' ? yearSeries(rows, year) : monthSeries(rows, year, month)} />
         </section>
 
         <section>
-          <div className="section-head"><Pix name="chart" /> Earned in the last 7 days</div>
-          <BarChart points={series(rows, 'week')} />
+          <div className="section-head"><Pix name="coin" /> Earned in the last 7 days</div>
+          <BarChart peakShift={weekTopShift} points={series(rows, 'week')} />
         </section>
       </div>
 
-      {/* Row 3 — recent shifts, full width. */}
-      <section>
-        <div className="section-head"><Pix name="list" /> Recent shifts</div>
-        <div className="history-list">
-          {recent.map((r, i) => (
-            <div className="history-item" key={r.id ?? `${r.date}-${i}`}>
-              <span style={{ flex: 1.5, whiteSpace: 'nowrap' }}><Pix name="calendar" /> {r.date}</span>
-              <span style={{ flex: 1, textAlign: 'center', whiteSpace: 'nowrap' }}>
-                <Pix name="clock" /> {hm(r.duration)}
-              </span>
-              <span style={{ flex: 1.1, textAlign: 'right', whiteSpace: 'nowrap',
-                             color: 'var(--accent)', fontWeight: 'bold' }}>
-                RM {r.earned.toFixed(2)}
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Row 3 — the full shift table, paged and sortable. */}
+      <ShiftTable rows={rows} />
     </Frame>
   )
 }

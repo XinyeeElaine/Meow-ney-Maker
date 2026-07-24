@@ -1,6 +1,6 @@
 // Run: node src/calc.test.mjs
 import assert from 'node:assert/strict'
-import { clock, hm, human, ratePerSecond, series, summarize, ymd } from './calc.js'
+import { clock, hm, human, monthSeries, ratePerSecond, series, summarize, yearSeries, ymd } from './calc.js'
 
 // RM1500 over 26 days x 8h = 748800 working seconds.
 const r = ratePerSecond(1500, 8, 26)
@@ -58,5 +58,26 @@ assert.equal(year.at(-1).label, 'Mar')
 assert.equal(year.at(-1).value, 15, 'March holds only the two 03-02 shifts')
 assert.equal(year.find((p) => p.key === '2026-02').value, 147, 'February sums its three days')
 assert.equal(year.find((p) => p.key === '2025-12').value, 3, 'a year reaches past the 30-day window')
+
+// monthSeries: one point per calendar day of the chosen month.
+const feb = monthSeries(rows, 2026, 1)                 // February 2026
+assert.equal(feb.length, 28, 'Feb 2026 has 28 days')
+assert.equal(feb[22].key, '2026-02-23')
+assert.equal(feb[22].value, 7, 'the 2026-02-23 shift lands on day 23')
+assert.equal(feb[23].value, 100, 'day 24')
+assert.equal(feb[24].value, 40, 'day 25')
+assert.equal(feb[0].value, 0, 'an idle day is a zero point')
+assert.equal(feb.reduce((a, p) => a + p.value, 0), 147, 'February sums its three days')
+assert.equal(monthSeries(rows, 2026, 0).length, 31, 'January has 31 days')
+assert.equal(monthSeries(rows, 2026, 3).length, 30, 'April has 30 days')
+
+// yearSeries: Jan..Dec of the chosen year.
+const y2026 = yearSeries(rows, 2026)
+assert.equal(y2026.length, 12)
+assert.equal(y2026[0].label, 'Jan')
+assert.equal(y2026[1].value, 147, 'February bucket sums its shifts')
+assert.equal(y2026[2].value, 15, 'March holds the two 03-02 shifts')
+assert.equal(yearSeries(rows, 2025).find((p) => p.key === '2025-12').value, 3, 'Dec 2025')
+assert.equal(yearSeries(rows, 2024).every((p) => p.value === 0), true, 'a year with no shifts is all zeros')
 
 console.log('calc ok')

@@ -106,6 +106,7 @@ export async function loadWorkSessions(user) {
     .map((s) => ({
       date: s.session_date, duration: s.duration_seconds,
       earned: s.amount_earned, id: s.id,
+      start: s.start_time, end: s.end_time,
     }))
     .reverse()
 }

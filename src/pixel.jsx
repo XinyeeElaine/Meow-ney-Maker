@@ -324,6 +324,8 @@ export function startTooltips() {
       el.removeAttribute('title')
     }
     tip.textContent = el.getAttribute('data-tip')
+    // Chart hit targets carry numbers, so they opt into the mono tooltip font.
+    tip.classList.toggle('mono', el.classList.contains('tip-mono'))
     tip.classList.add('show')
     place(el)
   })

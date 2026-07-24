@@ -599,6 +599,7 @@ h2 {
 .dashboard .chart-head {
     display: flex;
     align-items: center;
+    gap: 8px;             /* keep the icon off the words */
     min-height: 32px;
     margin-bottom: 8px;
 }
@@ -637,7 +638,8 @@ h2 {
     top: 8px;
     left: 12px;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 15px;
+    font-weight: 700;
     color: var(--text-dim);
 }
 /* flex + min-height, not a fixed height: the plot takes whatever the equal-height
@@ -663,7 +665,7 @@ h2 {
     align-items: flex-end;
     flex: 1;
     min-height: 150px;
-    padding-top: 20px;              /* clears the peak label in the corner */
+    padding-top: 28px;              /* clears the bigger peak label in the corner */
 }
 .bar-col { flex: 1; min-width: 0; height: 100%; display: flex; align-items: flex-end; }
 .bar {
@@ -683,6 +685,9 @@ h2 {
     color: var(--text-dim);
 }
 .chart-labels span { flex: 1; min-width: 0; text-align: center; overflow: hidden; }
+/* Mono day/month labels on the earnings line chart only, not the bar chart.
+   A month shows every day (1..31), so shrink them to fit without overlap. */
+.line-wrap .chart-labels { font-family: var(--font-mono); font-size: 9px; }
 
 .dash-note {
     margin: 26px 0;
@@ -695,6 +700,75 @@ h2 {
     .dash-grid { grid-template-columns: 1fr; }
     .dash-grid section { margin-bottom: 22px; }
 }
+
+/* Shift table — reuses .chart-head for the title + controls row, .range-tab for
+   the Top 5 toggle. */
+.table-controls { display: flex; align-items: center; gap: 8px; }
+.top5-btn { font-family: var(--font-mono); }
+.table-sort {
+    padding: 4px 10px;
+    background: var(--surface-2);
+    color: var(--text-dim);
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    font-family: var(--font-body);
+    font-size: 0.8em;
+    cursor: pointer;
+}
+.table-sort:disabled { opacity: 0.5; cursor: not-allowed; }
+.table-search { width: 150px; cursor: text; }
+.table-empty { color: var(--text-dim); padding: 18px; }
+
+.shift-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface-2);
+    border: 3px solid var(--border);
+    border-radius: 5px;
+    box-shadow: 4px 4px 0 var(--shadow);
+    overflow: hidden;
+}
+.shift-table th, .shift-table td {
+    padding: 10px 12px;
+    text-align: center;
+    border-bottom: 2px dashed var(--border);
+}
+/* Match the KPI cards: mono figures so dates and amounts line up column to column.
+   One text colour across every column so the table reads as one block. */
+.shift-table td { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); }
+.shift-table thead th {
+    font-family: var(--font-pixel);
+    font-size: 0.72em;
+    color: var(--text-dim);
+    border-bottom: 3px solid var(--border);
+}
+.shift-table tbody tr:last-child td { border-bottom: none; }
+.shift-table .num { white-space: nowrap; }
+/* Earned stays the same colour as the rest — only the weight sets it apart. */
+.shift-table td.num { font-weight: bold; }
+
+/* Bottom-right, per request. */
+.pager {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+}
+.pager-btn {
+    min-width: 30px;
+    padding: 5px 9px;
+    background: var(--surface-2);
+    color: var(--text-dim);
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+    cursor: pointer;
+}
+.pager-btn.active { background: var(--accent); color: var(--surface); }
+.pager-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pager-gap { color: var(--text-dim); padding: 0 2px; }
 
 .history-item {
     display: flex;
@@ -820,6 +894,7 @@ h2 {
     transition: opacity 0.1s steps(2), transform 0.1s steps(2);
 }
 .pixel-tip.show { opacity: 1; transform: translateY(0); }
+.pixel-tip.mono { font-family: var(--font-mono); }
 
 .logo-bonus {
     position: fixed;
@@ -1142,7 +1217,7 @@ h2 {
 @media print {
     /* Bars and the chart fill are backgrounds, which Chrome drops by default. */
     body { background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-    .top-nav, .dash-action, .range-tabs, .pixel-tip, .toast { display: none; }
+    .top-nav, .dash-action, .range-tabs, .table-controls, .pager, .pixel-tip, .toast { display: none; }
     .print-only { display: block; margin-bottom: 18px; color: var(--text-dim); }
     /* Paper is narrower than 720px, which would otherwise stack the two charts. */
     .dash-grid { grid-template-columns: 1fr 1fr; }
