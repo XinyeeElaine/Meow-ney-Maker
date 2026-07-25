@@ -48,6 +48,7 @@ const ICONS = {
   user:     ["..cccc..",".cccccc.",".cccccc.","..cccc..","........","..cccc..",".cccccc.","cccccccc"],
   eye:      ["........","..kkkk..",".kwwwwk.","kwwkkwwk","kwwkkwwk",".kwwwwk.","..kkkk..","........"],
   eyeOff:   ["........","........","k......k",".kkkkkk.","k.k..k.k","........","........","........"],
+  download: ["...cc...","...cc...","cccccccc",".cccccc.","..cccc..","...cc...","........","cccccccc"],
 }
 
 export function iconSvg(name) {

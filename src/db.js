@@ -122,3 +122,29 @@ export async function clearAllWorkSessions(user) {
   const { error } = await supabase.from('work_sessions').delete().eq('user_id', user.id)
   report('Clear history', error)
 }
+
+// Diary: one row per user per day. Returned keyed by entry_date so the calendar can
+// look a day up in O(1) instead of scanning the list per cell.
+export async function loadDiaryEntries(user) {
+  if (!supabase || !user) return {}
+  const { data, error } = await supabase
+    .from('diary_entries')
+    .select('entry_date, emote, note, tags')
+    .eq('user_id', user.id)
+  if (report('Load diary', error)) return {}
+  return Object.fromEntries(
+    data.map((e) => [e.entry_date, { emote: e.emote, note: e.note, tags: e.tags || [] }])
+  )
+}
+
+// Upsert on (user_id, entry_date) so re-saving the same day overwrites, never dupes.
+export async function saveDiaryEntry(user, date, emote, note, tags) {
+  if (!supabase || !user) return
+  const { error } = await supabase.from('diary_entries').upsert({
+    user_id: user.id,
+    entry_date: date,
+    emote, note, tags,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id,entry_date' })
+  report('Save diary', error)
+}

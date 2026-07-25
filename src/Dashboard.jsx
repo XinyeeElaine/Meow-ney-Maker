@@ -231,7 +231,7 @@ export default function Dashboard({ user }) {
   // "Save as PDF" destination writes the file — see the @media print block in style.css.
   const reportBtn = (
     <button className="btn btn-blue dash-action" onClick={() => window.print()}>
-      <Pix name="book" /> Download PDF
+      <Pix name="download" /> Download PDF
     </button>
   )
 

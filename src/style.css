@@ -1223,3 +1223,256 @@ h2 {
     .dash-grid { grid-template-columns: 1fr 1fr; }
     .dashboard section, .kpi, .chart-wrap { break-inside: avoid; }
 }
+
+/* ---- Diary ---- */
+.diary-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: calc(100% - 60px);
+}
+.diary-title { margin-bottom: 16px; }
+.container.diary { max-width: none; width: 100%; }
+
+.cal-head {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 18px 0 14px;
+}
+
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.cal-dow {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    padding-bottom: 4px;
+}
+
+.cal-cell {
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 5px 7px;
+    background: var(--surface-2);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    cursor: pointer;
+    font-family: var(--font-body);
+}
+
+.cal-cell.empty {
+    background: transparent;
+    border: none;
+    cursor: default;
+}
+
+.cal-cell.today {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent), 3px 3px 0 var(--shadow);
+    background: color-mix(in srgb, var(--accent) 16%, var(--surface-2));
+}
+.cal-cell.today .cal-num {
+    color: var(--accent);
+    text-shadow: 0 0 6px var(--accent);
+}
+
+.cal-num { font-family: var(--font-pixel); font-size: 12px; }
+
+/* Bottom row of a cell: work tag pinned left, mood box pinned right. */
+.cal-bottom {
+    margin-top: auto;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 4px;
+    line-height: 1;
+}
+
+/* Coin Pix inside a cell — keep it small next to the tag text. */
+.cal-bottom .pix svg { width: 12px; height: 12px; }
+
+/* Left stack: work time, then the day's tags below it. */
+.cal-left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-width: 0;
+}
+
+.cal-work {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+.cal-tag {
+    padding: 1px 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Mood: rectangle with emoji on top, label below. */
+.cal-mood {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding: 2px 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    text-transform: capitalize;
+}
+
+.cal-mood-emoji { font-size: 16px; }
+.cal-mood-text {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+}
+
+/* Drawer slides in from the right; overlay dims the calendar behind it. */
+.drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(60, 40, 40, 0.45);
+    display: flex;
+    justify-content: flex-end;
+    z-index: 50;
+}
+
+.drawer {
+    position: relative;
+    width: min(420px, 100%);
+    height: 100%;
+    overflow-y: auto;
+    padding: 22px 20px 28px;
+    background: var(--surface);
+    border-left: 3px solid var(--border);
+    box-shadow: -6px 0 0 var(--shadow);
+    text-align: left;
+}
+
+.drawer-date {
+    font-size: 16px;
+    margin: 0 30px 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.drawer-section { margin-bottom: 20px; }
+
+.drawer-total {
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    color: var(--text-dim);
+    text-align: right;
+}
+
+.drawer-save { width: 100%; }
+
+.mood-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.mood-btn {
+    font-size: 26px;
+    line-height: 1;
+    padding: 6px 8px;
+    background: var(--surface-2);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    filter: grayscale(0.5);
+    opacity: 0.7;
+}
+
+.mood-btn.active {
+    filter: none;
+    opacity: 1;
+    outline: 2px solid var(--accent);
+}
+
+/* Tag editor in the drawer */
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.tag-suggest { margin-top: 8px; margin-bottom: 0; }
+
+.tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text);
+}
+
+.tag-x {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--text-dim);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.tag-pick { cursor: pointer; color: var(--text-dim); }
+.tag-pick:hover { color: var(--accent); border-color: var(--accent); }
+
+.tag-input-row { display: flex; gap: 8px; }
+.tag-input-row .btn { flex: 0 0 auto; }
+
+.diary-tag-input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+    background: var(--surface-2);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+}
+
+.diary-note {
+    width: 100%;
+    resize: vertical;
+    padding: 8px 10px;
+    background: var(--surface-2);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+}
+
