@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Pix } from './pixel.jsx'
 import { MONTH_NAMES, hm, pad, ymd } from './calc.js'
 import { loadWorkSessions, loadDiaryEntries, saveDiaryEntry } from './db.js'
@@ -15,6 +15,9 @@ const moodEmoji = Object.fromEntries(MOODS)
 
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+// Always-offered tag suggestions; user's own tags merge in alongside.
+const DEFAULT_TAGS = ['Work', 'Play', 'Rest', 'Study', 'Family']
+
 // Clock time of an ISO stamp; older rows predate start/end, so guard for missing.
 const hhmm = (iso) =>
   iso ? new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'
@@ -26,9 +29,13 @@ const Frame = ({ children }) => (
   </div>
 )
 
-// The selected day's details, in a slide-in drawer from the right. Keyed by date
-// in the parent so its draft state re-seeds whenever a different day is opened.
-function DayView({ date, shifts, entry, suggestions, onSave, onClose }) {
+// The selected day's entry as an open book: info on the left page, writing on
+// the right. Keyed by date in the parent so drafts re-seed on day change.
+// Book height is fixed, so only show a handful of shifts before truncating.
+const MAX_SHIFTS = 4
+
+function BookView({ date, shifts, entry, suggestions, onSave }) {
+  const dialogRef = useRef(null)
   const [emote, setEmote] = useState(entry?.emote || '')
   const [note, setNote] = useState(entry?.note || '')
   const [tags, setTags] = useState(entry?.tags || [])
@@ -43,7 +50,16 @@ function DayView({ date, shifts, entry, suggestions, onSave, onClose }) {
     setTagInput('')
   }
   const removeTag = (t) => { setTags(tags.filter((x) => x !== t)); dirty() }
-  const unused = suggestions.filter((t) => !tags.includes(t))
+  const toggleTag = (t) => {
+    if (tags.includes(t)) removeTag(t)
+    else { setTags([...tags, t]); dirty() }
+  }
+  // Custom tags deleted this session; hides the chip, defaults are permanent.
+  // ponytail: only clears the tag from this day's entry — other days keep it,
+  // so it reappears in suggestions after reload. Per-user tag table if needed.
+  const [hidden, setHidden] = useState([])
+  const delTag = (t) => { setHidden([...hidden, t]); removeTag(t) }
+  const shownTags = [...new Set([...suggestions, ...tags])].filter((t) => !hidden.includes(t))
 
   const total = shifts.reduce((s, r) => s + r.earned, 0)
   const totalSecs = shifts.reduce((s, r) => s + r.duration, 0)
@@ -58,12 +74,11 @@ function DayView({ date, shifts, entry, suggestions, onSave, onClose }) {
   }
 
   return (
-    <div className="drawer-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <aside className="drawer" role="dialog" aria-label={`Diary for ${pretty}`}>
-        <span className="close-btn" onClick={onClose}>&times;</span>
-        <h2 className="drawer-date"><Pix name="calendar" /> {pretty}</h2>
+    <div className="book">
+      <div className="book-page book-page-left">
+        <h2 className="book-date"><Pix name="calendar" /> {pretty}</h2>
 
-        <section className="drawer-section">
+        <section className="book-section">
           <div className="section-head"><Pix name="clock" /> Work</div>
           {shifts.length === 0
             ? <p className="dash-note">No shifts logged this day.</p>
@@ -74,7 +89,7 @@ function DayView({ date, shifts, entry, suggestions, onSave, onClose }) {
                     <tr><th>Start</th><th>End</th><th>Time</th><th className="num">RM</th></tr>
                   </thead>
                   <tbody>
-                    {shifts.map((r, i) => (
+                    {shifts.slice(0, MAX_SHIFTS).map((r, i) => (
                       <tr key={r.id ?? i}>
                         <td>{hhmm(r.start)}</td>
                         <td>{hhmm(r.end)}</td>
@@ -84,12 +99,15 @@ function DayView({ date, shifts, entry, suggestions, onSave, onClose }) {
                     ))}
                   </tbody>
                 </table>
-                <p className="drawer-total">{hm(totalSecs)} · RM {total.toFixed(2)}</p>
+                <p className="book-total">
+                  {shifts.length > MAX_SHIFTS && `+${shifts.length - MAX_SHIFTS} more · `}
+                  {hm(totalSecs)} · RM {total.toFixed(2)}
+                </p>
               </>
             )}
         </section>
 
-        <section className="drawer-section">
+        <section className="book-section">
           <div className="section-head"><Pix name="cat" /> Mood</div>
           <div className="mood-row">
             {MOODS.map(([key, emoji]) => (
@@ -101,47 +119,56 @@ function DayView({ date, shifts, entry, suggestions, onSave, onClose }) {
             ))}
           </div>
         </section>
+      </div>
 
-        <section className="drawer-section">
-          <div className="section-head"><Pix name="star" /> Tags</div>
-          {tags.length > 0 && (
-            <div className="tag-row">
-              {tags.map((t) => (
-                <span key={t} className="tag-chip">
-                  {t}
-                  <button type="button" className="tag-x" aria-label={`Remove ${t}`}
-                          onClick={() => removeTag(t)}>&times;</button>
-                </span>
-              ))}
-            </div>
-          )}
-          <div className="tag-input-row">
-            <input className="diary-tag-input" value={tagInput} placeholder="Add a tag…"
-                   onChange={(e) => setTagInput(e.target.value)}
-                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(tagInput) } }} />
-            <button type="button" className="btn btn-blue" onClick={() => addTag(tagInput)}>Add</button>
-          </div>
-          {unused.length > 0 && (
-            <div className="tag-row tag-suggest">
-              {unused.map((t) => (
-                <button key={t} type="button" className="tag-chip tag-pick"
-                        onClick={() => addTag(t)}>+ {t}</button>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="drawer-section">
+      <div className="book-page book-page-right">
+        <section className="book-section">
           <div className="section-head"><Pix name="book" /> Note</div>
-          <textarea className="diary-note" rows="6" value={note}
+          <textarea className="diary-note" rows="8" value={note}
                     placeholder="Special event, how the day went…"
                     onChange={(e) => { setNote(e.target.value); dirty() }} />
         </section>
 
-        <button className="btn btn-blue drawer-save" onClick={save} disabled={saving}>
+        <section className="book-section">
+          <div className="section-head"><Pix name="star" /> Tags</div>
+          <div className="tag-row">
+            {shownTags.map((t) => {
+              const on = tags.includes(t)
+              const custom = !DEFAULT_TAGS.includes(t)
+              return (
+                <button key={t} type="button"
+                        className={'tag-chip tag-toggle' + (on ? ' on' : '')}
+                        aria-pressed={on}
+                        onClick={() => toggleTag(t)}>
+                  {t}
+                  {custom && (
+                    <span className="tag-x" role="button" aria-label={`Delete ${t}`}
+                          onClick={(e) => { e.stopPropagation(); delTag(t) }}>&times;</span>
+                  )}
+                </button>
+              )
+            })}
+            <button type="button" className="tag-chip tag-pick"
+                    onClick={() => {
+                      dialogRef.current.showModal()
+                      dialogRef.current.querySelector('input')?.focus()
+                    }}>+ Add</button>
+          </div>
+          <dialog ref={dialogRef} className="tag-dialog" onClose={() => setTagInput('')}>
+            {/* method="dialog" closes the dialog on submit; addTag handles the value. */}
+            <form method="dialog" onSubmit={() => addTag(tagInput)}>
+              <div className="section-head"><Pix name="star" /> Add tag</div>
+              <input className="diary-tag-input" value={tagInput} placeholder="Tag name…"
+                     onChange={(e) => setTagInput(e.target.value)} />
+              <button className="btn btn-blue">Done</button>
+            </form>
+          </dialog>
+        </section>
+
+        <button className="btn btn-blue book-save" onClick={save} disabled={saving}>
           {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save'}
         </button>
-      </aside>
+      </div>
     </div>
   )
 }
@@ -152,7 +179,14 @@ export default function Diary({ user }) {
   const [month, setMonth] = useState(now.getMonth())   // 0-11
   const [rows, setRows] = useState([])
   const [entries, setEntries] = useState({})           // { 'YYYY-MM-DD': {emote, note, tags} }
-  const [selected, setSelected] = useState(null)       // 'YYYY-MM-DD' or null
+  const [selected, setSelected] = useState(ymd(now))   // 'YYYY-MM-DD'
+  const [flip, setFlip] = useState(0)                  // >0 while a page-flip runs
+
+  const pick = (date) => {
+    if (date === selected) return
+    setSelected(date)
+    setFlip((k) => k + 1)   // new key each time so a rapid re-click restarts the animation
+  }
 
   useEffect(() => {
     if (!user) return
@@ -175,11 +209,6 @@ export default function Diary({ user }) {
 
   const firstDow = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
-  // Total seconds worked per day, so a cell can show the coin + how long.
-  const workedSecs = rows.reduce((m, r) => {
-    m[r.date] = (m[r.date] || 0) + r.duration
-    return m
-  }, {})
   const cells = [
     ...Array(firstDow).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
@@ -191,60 +220,60 @@ export default function Diary({ user }) {
   }
 
   const selectedShifts = selected ? rows.filter((r) => r.date === selected) : []
-  const allTags = [...new Set(Object.values(entries).flatMap((e) => e.tags || []))].sort()
+  const allTags = [...new Set([
+    ...DEFAULT_TAGS,
+    ...Object.values(entries).flatMap((e) => e.tags || []),
+  ])].sort()
 
   return (
     <Frame>
-      <div className="cal-head">
-        <button className="pager-btn" onClick={() => step(-1)} aria-label="Previous month">‹</button>
-        <select className="table-sort" value={month} aria-label="Month"
-                onChange={(e) => setMonth(+e.target.value)}>
-          {MONTH_NAMES.map((m, i) => <option key={i} value={i}>{m}</option>)}
-        </select>
-        <select className="table-sort" value={year} aria-label="Year"
-                onChange={(e) => setYear(+e.target.value)}>
-          {Array.from({ length: 11 }, (_, i) => now.getFullYear() - 5 + i)
-            .map((y) => <option key={y} value={y}>{y}</option>)}
-        </select>
-        <button className="pager-btn" onClick={() => step(1)} aria-label="Next month">›</button>
-      </div>
+      <div className="diary-cols">
+        <div className="mini-cal">
+          <div className="cal-head">
+            <button className="pager-btn" onClick={() => step(-1)} aria-label="Previous month">‹</button>
+            <select className="table-sort" value={month} aria-label="Month"
+                    onChange={(e) => setMonth(+e.target.value)}>
+              {MONTH_NAMES.map((m, i) => <option key={i} value={i}>{m}</option>)}
+            </select>
+            <select className="table-sort" value={year} aria-label="Year"
+                    onChange={(e) => setYear(+e.target.value)}>
+              {Array.from({ length: 11 }, (_, i) => now.getFullYear() - 5 + i)
+                .map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <button className="pager-btn" onClick={() => step(1)} aria-label="Next month">›</button>
+          </div>
 
-      <div className="cal-grid">
-        {DOW.map((d) => <div key={d} className="cal-dow">{d}</div>)}
-        {cells.map((day, i) => {
-          if (!day) return <div key={`b${i}`} className="cal-cell empty" />
-          const date = `${year}-${pad(month + 1)}-${pad(day)}`
-          const entry = entries[date]
-          const isToday = date === ymd(now)
-          return (
-            <button key={date}
-                    className={'cal-cell' + (isToday ? ' today' : '') + (date === selected ? ' selected' : '')}
-                    onClick={() => setSelected(date)}>
-              <span className="cal-num">{day}</span>
-              <div className="cal-bottom">
-                <span className="cal-left">
-                  {entry?.tags?.map((t) => <span key={t} className="cal-tag">{t}</span>)}
-                  {workedSecs[date] && (
-                    <span className="cal-work"><Pix name="coin" /> {hm(workedSecs[date])}</span>
-                  )}
-                </span>
-                {entry?.emote && (
-                  <span className="cal-mood">
-                    <span className="cal-mood-emoji">{moodEmoji[entry.emote]}</span>
-                    <span className="cal-mood-text">{entry.emote}</span>
-                  </span>
-                )}
-              </div>
-            </button>
-          )
-        })}
-      </div>
+          <div className="cal-grid">
+            {DOW.map((d) => <div key={d} className="cal-dow">{d}</div>)}
+            {cells.map((day, i) => {
+              if (!day) return <div key={`b${i}`} className="cal-cell empty" />
+              const date = `${year}-${pad(month + 1)}-${pad(day)}`
+              const entry = entries[date]
+              const isToday = date === ymd(now)
+              return (
+                <button key={date}
+                        className={'cal-cell' + (isToday ? ' today' : '') + (date === selected ? ' selected' : '')}
+                        onClick={() => pick(date)}>
+                  <span className="cal-num">{day}</span>
+                  {entry?.tags?.[0] && <span className="cal-tag">{entry.tags[0]}</span>}
+                  {entry?.emote && <span className="cal-mini-mood">{moodEmoji[entry.emote]}</span>}
+                </button>
+              )
+            })}
+          </div>
+        </div>
 
-      {selected && (
-        <DayView key={selected} date={selected} shifts={selectedShifts}
-                 entry={entries[selected]} suggestions={allTags}
-                 onSave={save} onClose={() => setSelected(null)} />
-      )}
+        <div className="book-outer">
+          <BookView key={selected} date={selected} shifts={selectedShifts}
+                    entry={entries[selected]} suggestions={allTags} onSave={save} />
+          {flip > 0 && (
+            <div key={flip} className="book-flip" onAnimationEnd={() => setFlip(0)}>
+              <div className="book-flip-face book-flip-front" />
+              <div className="book-flip-face book-flip-back" />
+            </div>
+          )}
+        </div>
+      </div>
     </Frame>
   )
 }

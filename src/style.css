@@ -1234,6 +1234,17 @@ h2 {
 .diary-title { margin-bottom: 16px; }
 .container.diary { max-width: none; width: 100%; }
 
+/* Diary: mini calendar left, open book right. */
+.diary-cols {
+    display: grid;
+    grid-template-columns: minmax(340px, 1fr) 1.3fr;
+    gap: 24px;
+    align-items: start;
+}
+@media (max-width: 800px) {
+    .diary-cols { grid-template-columns: 1fr; }
+}
+
 .cal-head {
     display: flex;
     align-items: center;
@@ -1257,17 +1268,24 @@ h2 {
 }
 
 .cal-cell {
-    min-height: 80px;
+    height: 68px;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding: 5px 7px;
+    gap: 2px;
+    padding: 4px 6px;
     background: var(--surface-2);
     border: 2px solid var(--border);
     border-radius: 6px;
     color: var(--text);
     cursor: pointer;
     font-family: var(--font-body);
+}
+
+.cal-cell.selected {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 24%, var(--surface-2));
 }
 
 .cal-cell.empty {
@@ -1288,40 +1306,12 @@ h2 {
 
 .cal-num { font-family: var(--font-pixel); font-size: 12px; }
 
-/* Bottom row of a cell: work tag pinned left, mood box pinned right. */
-.cal-bottom {
-    margin-top: auto;
-    width: 100%;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 4px;
+/* Mini cell: day number top, one tag chip middle, mood pinned bottom-center. */
+.cal-mini-mood {
+    font-size: 14px;
     line-height: 1;
-}
-
-/* Coin Pix inside a cell — keep it small next to the tag text. */
-.cal-bottom .pix svg { width: 12px; height: 12px; }
-
-/* Left stack: work time, then the day's tags below it. */
-.cal-left {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 3px;
-    min-width: 0;
-}
-
-.cal-work {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    padding: 2px 6px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-dim);
+    margin-top: auto;
+    align-self: center;
 }
 
 .cal-tag {
@@ -1338,66 +1328,113 @@ h2 {
     white-space: nowrap;
 }
 
-/* Mood: rectangle with emoji on top, label below. */
-.cal-mood {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1px;
-    padding: 2px 6px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    text-transform: capitalize;
-}
-
-.cal-mood-emoji { font-size: 16px; }
-.cal-mood-text {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-dim);
-}
-
-/* Drawer slides in from the right; overlay dims the calendar behind it. */
-.drawer-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(60, 40, 40, 0.45);
-    display: flex;
-    justify-content: flex-end;
-    z-index: 50;
-}
-
-.drawer {
+/* Open book: two paper pages sharing a spine. */
+.book-outer {
     position: relative;
-    width: min(420px, 100%);
-    height: 100%;
-    overflow-y: auto;
-    padding: 22px 20px 28px;
+    perspective: 1400px;
+}
+
+.book {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 560px;
     background: var(--surface);
-    border-left: 3px solid var(--border);
-    box-shadow: -6px 0 0 var(--shadow);
+    border: 3px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 6px 6px 0 var(--shadow);
     text-align: left;
 }
 
-.drawer-date {
-    font-size: 16px;
-    margin: 0 30px 16px 0;
+.book-page {
+    padding: 20px 18px;
+    min-width: 0;
+    overflow-y: auto;
+}
+
+/* Spine: hard edge plus soft inner shadow toward the fold on both pages. */
+.book-page-left {
+    border-right: 2px solid var(--border);
+    box-shadow: inset -14px 0 18px -14px var(--shadow);
+}
+.book-page-right {
+    box-shadow: inset 14px 0 18px -14px var(--shadow);
+}
+
+.book-date {
+    font-size: 15px;
+    margin: 0 0 14px;
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.drawer-section { margin-bottom: 20px; }
+.book-section { margin-bottom: 18px; }
 
-.drawer-total {
+.book-total {
     margin-top: 8px;
     font-family: var(--font-mono);
     color: var(--text-dim);
     text-align: right;
 }
 
-.drawer-save { width: 100%; }
+.book-save { width: 100%; }
+
+@media (max-width: 800px) {
+    .book { grid-template-columns: 1fr; height: auto; }
+    .book-page-left {
+        border-right: none;
+        border-bottom: 2px solid var(--border);
+        box-shadow: none;
+    }
+    .book-page-right { box-shadow: none; }
+}
+
+/* Page flip: blank paper sheet hinged on the spine, flips right-to-left
+   over the new content. Removed on animationend. */
+.book-flip {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 50%;
+    height: 100%;
+    transform-origin: left center;
+    transform-style: preserve-3d;
+    animation: page-flip 0.6s ease-in-out both;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.book-flip-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 0 10px 10px 0;
+    box-shadow: inset 14px 0 18px -14px var(--shadow);
+}
+
+.book-flip-back {
+    transform: rotateY(180deg);
+    border-radius: 10px 0 0 10px;
+    box-shadow: inset -14px 0 18px -14px var(--shadow);
+}
+
+@keyframes page-flip {
+    from { transform: rotateY(0deg); }
+    to   { transform: rotateY(-180deg); }
+}
+
+/* Stacked layout has no spine to hinge on; reduced motion wants no flip.
+   Zero-duration animation still fires animationend, so React unmounts the
+   overlay even while hidden — no phantom replay if the viewport widens
+   or the motion preference changes later. */
+@media (max-width: 800px), (prefers-reduced-motion: reduce) {
+    .book-flip {
+        animation-duration: 0s;
+        visibility: hidden;
+    }
+}
 
 .mood-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
@@ -1421,9 +1458,18 @@ h2 {
 
 /* Tag editor in the drawer */
 .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-.tag-suggest { margin-top: 8px; margin-bottom: 0; }
+
+/* Toggleable tag chip: dim until selected, accent when on. */
+.tag-toggle { cursor: pointer; color: var(--text-dim); }
+.tag-toggle:hover { border-color: var(--accent); }
+.tag-chip.on {
+    background: color-mix(in srgb, var(--accent) 32%, var(--surface-2));
+    border-color: var(--accent);
+    color: var(--text);
+}
 
 .tag-chip {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -1436,21 +1482,48 @@ h2 {
     color: var(--text);
 }
 
+/* Delete cross sits on the chip's top-right corner, only while hovered. */
 .tag-x {
-    background: none;
-    border: none;
+    display: none;
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    width: 16px;
+    height: 16px;
+    align-items: center;
+    justify-content: center;
     padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 50%;
     color: var(--text-dim);
-    font-size: 15px;
+    font-size: 12px;
     line-height: 1;
     cursor: pointer;
 }
+.tag-chip:hover .tag-x { display: inline-flex; }
+.tag-x:hover { color: var(--accent); border-color: var(--accent); }
 
 .tag-pick { cursor: pointer; color: var(--text-dim); }
 .tag-pick:hover { color: var(--accent); border-color: var(--accent); }
 
-.tag-input-row { display: flex; gap: 8px; }
-.tag-input-row .btn { flex: 0 0 auto; }
+/* Add-tag popup: native <dialog>, opened by the "+ Add" chip. */
+.tag-dialog {
+    margin: auto;
+    padding: 18px;
+    background: var(--surface);
+    border: 3px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 6px 6px 0 var(--shadow);
+    color: var(--text);
+}
+.tag-dialog::backdrop { background: rgba(60, 40, 40, 0.45); }
+.tag-dialog form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 240px;
+}
 
 .diary-tag-input {
     flex: 1;
