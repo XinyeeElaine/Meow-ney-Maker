@@ -49,6 +49,11 @@ const ICONS = {
   eye:      ["........","..kkkk..",".kwwwwk.","kwwkkwwk","kwwkkwwk",".kwwwwk.","..kkkk..","........"],
   eyeOff:   ["........","........","k......k",".kkkkkk.","k.k..k.k","........","........","........"],
   download: ["...cc...","...cc...","cccccccc",".cccccc.","..cccc..","...cc...","........","cccccccc"],
+  // Pencil on the diagonal: pink eraser top-right, yellow body, wood tip, dark point.
+  pencil:   ["......py",".....pyy","....yyy.","...yyy..","..yyy...",".nyy....","nn......","k......."],
+  search:   [".ccc....","c...c...","c...c...",".ccc....","....c...",".....c..","......c.","........"],
+  // Funnel: wide mouth narrowing to a stem.
+  filter:   ["cccccccc",".cccccc.","..cccc..","...cc...","...cc...","...cc...","...cc...","........"],
 }
 
 export function iconSvg(name) {

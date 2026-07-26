@@ -214,10 +214,12 @@ export default function Dashboard({ user }) {
 
   const s = summarize(rows)
 
-  // Years to offer in the dropdown: every year with a shift, plus the current one
-  // so an empty new year is still selectable, newest first.
-  const years = [...new Set([now.getFullYear(), ...rows.map((r) => +r.date.slice(0, 4))])]
-    .sort((a, b) => b - a)
+  // Years to offer in the dropdown: the current one first so an empty new year is
+  // still selectable, then every year with a shift, newest first.
+  const years = [...new Set([
+    now.getFullYear(),
+    ...rows.map((r) => +r.date.slice(0, 4)).sort((a, b) => b - a),
+  ])]
 
   // Biggest single shift in a date range — the "Peak" the charts show. Not the
   // bucket total, which can merge several shifts on one day.

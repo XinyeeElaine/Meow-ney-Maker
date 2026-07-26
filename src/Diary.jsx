@@ -2,29 +2,43 @@ import { useEffect, useRef, useState } from 'react'
 import { Pix } from './pixel.jsx'
 import { MONTH_NAMES, hm, pad, ymd } from './calc.js'
 import { loadWorkSessions, loadDiaryEntries, saveDiaryEntry } from './db.js'
+import { showDialog } from './dialog.js'
 
 // Cat moods, on theme. Key is what's stored; emoji is only ever for display.
 const MOODS = [
-  ['great', '😺'],
-  ['good', '😸'],
+  ['happy', '😸'],
   ['sad', '😿'],
-  ['shocked', '🙀'],
-  ['grumpy', '😾'],
+  ['sleepy', '😴'],
+  ['angry', '😾'],
+  ['love', '😻'],
+  ['bored', '😼'],
 ]
-const moodEmoji = Object.fromEntries(MOODS)
+// Entries written before this list changed still store the old keys, so keep
+// their emoji for display only — they're gone from the picker.
+const RETIRED_MOODS = { great: '😺', good: '😸', shocked: '🙀', grumpy: '😾' }
+const moodEmoji = { ...RETIRED_MOODS, ...Object.fromEntries(MOODS) }
 
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 // Always-offered tag suggestions; user's own tags merge in alongside.
-const DEFAULT_TAGS = ['Work', 'Play', 'Rest', 'Study', 'Family']
+const DEFAULT_TAGS = ['Work', 'Play', 'Rest', 'Study', 'Family', 'Special']
+
+// Each default tag gets its own colour in the mini calendar; the colours live in
+// style.css as .t-work … .t-special. Custom tags keep the theme accent.
+const tagClass = (t) => (DEFAULT_TAGS.includes(t) ? ` t-${t.toLowerCase()}` : '')
 
 // Clock time of an ISO stamp; older rows predate start/end, so guard for missing.
 const hhmm = (iso) =>
   iso ? new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'
 
-const Frame = ({ children }) => (
+// Title centred on the page, action pinned right — the empty first column is what
+// keeps the title centred however wide the action gets.
+const Frame = ({ action, children }) => (
   <div className="diary-wrap">
-    <h1 className="diary-title">Diary <Pix name="book" /></h1>
+    <div className="diary-head">
+      <h1 className="diary-title">Every day deserves a page <Pix name="pencil" /></h1>
+      {action}
+    </div>
     <div className="container diary">{children}</div>
   </div>
 )
@@ -34,7 +48,7 @@ const Frame = ({ children }) => (
 // Book height is fixed, so only show a handful of shifts before truncating.
 const MAX_SHIFTS = 4
 
-function BookView({ date, shifts, entry, suggestions, onSave }) {
+function BookView({ date, shifts, entry, suggestions, onSave, unsavedRef }) {
   const dialogRef = useRef(null)
   const [emote, setEmote] = useState(entry?.emote || '')
   const [note, setNote] = useState(entry?.note || '')
@@ -43,7 +57,17 @@ function BookView({ date, shifts, entry, suggestions, onSave }) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
-  const dirty = () => setSaved(false)
+  // Two flags on purpose: `saved` drives the button label, `unsavedRef` is what
+  // the day-switch and tab-close guards read (a ref, so no stale closure).
+  const [unsaved, setUnsaved] = useState(false)
+  const dirty = () => { setSaved(false); setUnsaved(true); unsavedRef.current = true }
+
+  // Browser's own "Leave site?" prompt. Only armed while there's something to lose.
+  useEffect(() => {
+    const warn = (e) => { if (unsavedRef.current) e.preventDefault() }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [unsavedRef])
   const addTag = (t) => {
     const v = t.trim()
     if (v && !tags.includes(v)) { setTags([...tags, v]); dirty() }
@@ -60,23 +84,49 @@ function BookView({ date, shifts, entry, suggestions, onSave }) {
   const [hidden, setHidden] = useState([])
   const delTag = (t) => { setHidden([...hidden, t]); removeTag(t) }
   const shownTags = [...new Set([...suggestions, ...tags])].filter((t) => !hidden.includes(t))
+  // Defaults get their own even row; the user's own tags trail the + Add button.
+  const defaultTags = shownTags.filter((t) => DEFAULT_TAGS.includes(t))
+  const customTags = shownTags.filter((t) => !DEFAULT_TAGS.includes(t))
+  // Same chip in both rows; only custom ones carry the delete ×.
+  const chip = (t) => {
+    const on = tags.includes(t)
+    return (
+      <button key={t} type="button"
+              className={'tag-chip tag-toggle' + (on ? ' on' : '')}
+              aria-pressed={on}
+              onClick={() => toggleTag(t)}>
+        {t}
+        {!DEFAULT_TAGS.includes(t) && (
+          <span className="tag-x" role="button" aria-label={`Delete ${t}`}
+                onClick={(e) => { e.stopPropagation(); delTag(t) }}>&times;</span>
+        )}
+      </button>
+    )
+  }
 
   const total = shifts.reduce((s, r) => s + r.earned, 0)
   const totalSecs = shifts.reduce((s, r) => s + r.duration, 0)
-  const pretty = new Date(date + 'T00:00').toLocaleDateString([],
-    { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  // Two lines: the date itself, then the weekday under it.
+  const day = new Date(date + 'T00:00')
+  const pretty = day.toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' })
+  const weekday = day.toLocaleDateString([], { weekday: 'long' })
 
   async function save() {
     setSaving(true)
     await onSave(date, emote, note, tags)
     setSaving(false)
     setSaved(true)
+    setUnsaved(false)
+    unsavedRef.current = false
   }
 
   return (
     <div className="book">
       <div className="book-page book-page-left">
-        <h2 className="book-date"><Pix name="calendar" /> {pretty}</h2>
+        <h2 className="book-date">
+          <span className="book-date-line"><Pix name="calendar" /> {pretty}</span>
+          <span className="book-weekday">{weekday}</span>
+        </h2>
 
         <section className="book-section">
           <div className="section-head"><Pix name="clock" /> Work</div>
@@ -86,22 +136,23 @@ function BookView({ date, shifts, entry, suggestions, onSave }) {
               <>
                 <table className="shift-table">
                   <thead>
-                    <tr><th>Start</th><th>End</th><th>Time</th><th className="num">RM</th></tr>
+                    <tr><th>Start</th><th>End</th><th className="num">Time</th></tr>
                   </thead>
                   <tbody>
                     {shifts.slice(0, MAX_SHIFTS).map((r, i) => (
                       <tr key={r.id ?? i}>
                         <td>{hhmm(r.start)}</td>
                         <td>{hhmm(r.end)}</td>
-                        <td>{hm(r.duration)}</td>
-                        <td className="num">{r.earned.toFixed(2)}</td>
+                        <td className="num">{hm(r.duration)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+                {/* Time already sits in the table's last column, so the footer
+                    only carries the money. */}
                 <p className="book-total">
                   {shifts.length > MAX_SHIFTS && `+${shifts.length - MAX_SHIFTS} more · `}
-                  {hm(totalSecs)} · RM {total.toFixed(2)}
+                  Earned <strong>RM {total.toFixed(2)}</strong>
                 </p>
               </>
             )}
@@ -131,28 +182,15 @@ function BookView({ date, shifts, entry, suggestions, onSave }) {
 
         <section className="book-section">
           <div className="section-head"><Pix name="star" /> Tags</div>
-          <div className="tag-row">
-            {shownTags.map((t) => {
-              const on = tags.includes(t)
-              const custom = !DEFAULT_TAGS.includes(t)
-              return (
-                <button key={t} type="button"
-                        className={'tag-chip tag-toggle' + (on ? ' on' : '')}
-                        aria-pressed={on}
-                        onClick={() => toggleTag(t)}>
-                  {t}
-                  {custom && (
-                    <span className="tag-x" role="button" aria-label={`Delete ${t}`}
-                          onClick={(e) => { e.stopPropagation(); delTag(t) }}>&times;</span>
-                  )}
-                </button>
-              )
-            })}
+          <div className="tag-row">{defaultTags.map(chip)}</div>
+          {/* + Add leads the second row; the user's own tags follow it. */}
+          <div className="tag-row-custom">
             <button type="button" className="tag-chip tag-pick"
                     onClick={() => {
                       dialogRef.current.showModal()
                       dialogRef.current.querySelector('input')?.focus()
                     }}>+ Add</button>
+            {customTags.map(chip)}
           </div>
           <dialog ref={dialogRef} className="tag-dialog" onClose={() => setTagInput('')}>
             {/* method="dialog" closes the dialog on submit; addTag handles the value. */}
@@ -165,8 +203,9 @@ function BookView({ date, shifts, entry, suggestions, onSave }) {
           </dialog>
         </section>
 
-        <button className="btn btn-blue book-save" onClick={save} disabled={saving}>
-          {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save'}
+        <button className={'btn btn-blue book-save' + (unsaved ? ' unsaved' : '')}
+                onClick={save} disabled={saving || !unsaved}>
+          {saving ? 'Saving…' : saved ? 'Saved ✓' : unsaved ? 'Save •' : 'Save'}
         </button>
       </div>
     </div>
@@ -181,9 +220,29 @@ export default function Diary({ user }) {
   const [entries, setEntries] = useState({})           // { 'YYYY-MM-DD': {emote, note, tags} }
   const [selected, setSelected] = useState(ymd(now))   // 'YYYY-MM-DD'
   const [flip, setFlip] = useState(0)                  // >0 while a page-flip runs
+  const [moodFilter, setMoodFilter] = useState('')     // '' = any mood
+  const [tagFilter, setTagFilter] = useState('')       // '' = any tag
+  const filterRef = useRef(null)
 
-  const pick = (date) => {
+  // Set by BookView while an entry has unsaved edits; switching days would throw
+  // them away, so ask first. A ref, not state — the guard must read it at click time.
+  const unsavedRef = useRef(false)
+
+  // Same warning Profile shows when a typed name would be lost: "Keep editing" is
+  // the cancel action, so Escape can never be what discards the entry.
+  const pick = async (date) => {
     if (date === selected) return
+    if (unsavedRef.current) {
+      const discard = await showDialog({
+        title: 'Unsaved changes',
+        message: `This day's entry hasn't been saved yet. Switch days anyway?`,
+        cat: true,
+        okText: 'Discard',
+        cancelText: 'Keep editing',
+      })
+      if (!discard) return
+    }
+    unsavedRef.current = false
     setSelected(date)
     setFlip((k) => k + 1)   // new key each time so a rapid re-click restarts the animation
   }
@@ -225,8 +284,43 @@ export default function Diary({ user }) {
     ...Object.values(entries).flatMap((e) => e.tags || []),
   ])].sort()
 
+  // Both filters must match. A day with no entry fails either one, so it fades
+  // as soon as any filter is on.
+  const hits = (e) => (!moodFilter || e?.emote === moodFilter) &&
+                      (!tagFilter || (e?.tags || []).includes(tagFilter))
+
+  const filterOn = moodFilter || tagFilter
+  const filterBtn = (
+    <button className={'btn btn-blue diary-filter-btn' + (filterOn ? ' unsaved' : '')}
+            onClick={() => filterRef.current.showModal()}>
+      <Pix name="filter" /> Filter{filterOn ? ' •' : ''}
+    </button>
+  )
+
   return (
-    <Frame>
+    <Frame action={filterBtn}>
+      {/* Same <dialog> shell as the tag picker — dialog.js can't hold selects. */}
+      <dialog ref={filterRef} className="tag-dialog">
+        <form method="dialog">
+          <div className="section-head">Filter days</div>
+          <select className="table-sort" value={moodFilter} aria-label="Filter by mood"
+                  onChange={(e) => setMoodFilter(e.target.value)}>
+            <option value="">All moods</option>
+            {MOODS.map(([key, emoji]) => <option key={key} value={key}>{emoji} {key}</option>)}
+          </select>
+          <select className="table-sort" value={tagFilter} aria-label="Filter by tag"
+                  onChange={(e) => setTagFilter(e.target.value)}>
+            <option value="">All tags</option>
+            {allTags.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <div className="filter-actions">
+            <button type="button" className="btn"
+                    onClick={() => { setMoodFilter(''); setTagFilter('') }}>Clear</button>
+            <button className="btn btn-blue">Done</button>
+          </div>
+        </form>
+      </dialog>
+
       <div className="diary-cols">
         <div className="mini-cal">
           <div className="cal-head">
@@ -237,8 +331,13 @@ export default function Diary({ user }) {
             </select>
             <select className="table-sort" value={year} aria-label="Year"
                     onChange={(e) => setYear(+e.target.value)}>
-              {Array.from({ length: 11 }, (_, i) => now.getFullYear() - 5 + i)
-                .map((y) => <option key={y} value={y}>{y}</option>)}
+              {/* Current year always first, then ten ahead, plus the pager's year
+                  if it stepped outside that window. */}
+              {[...new Set([
+                now.getFullYear(),
+                ...Array.from({ length: 10 }, (_, i) => now.getFullYear() + i + 1),
+                year,
+              ])].map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
             <button className="pager-btn" onClick={() => step(1)} aria-label="Next month">›</button>
           </div>
@@ -252,10 +351,14 @@ export default function Diary({ user }) {
               const isToday = date === ymd(now)
               return (
                 <button key={date}
-                        className={'cal-cell' + (isToday ? ' today' : '') + (date === selected ? ' selected' : '')}
+                        className={'cal-cell' + (isToday ? ' today' : '') +
+                                   (date === selected ? ' selected' : '') +
+                                   (hits(entry) ? '' : ' faded')}
                         onClick={() => pick(date)}>
                   <span className="cal-num">{day}</span>
-                  {entry?.tags?.[0] && <span className="cal-tag">{entry.tags[0]}</span>}
+                  {entry?.tags?.[0] && (
+                    <span className={'cal-tag' + tagClass(entry.tags[0])}>{entry.tags[0]}</span>
+                  )}
                   {entry?.emote && <span className="cal-mini-mood">{moodEmoji[entry.emote]}</span>}
                 </button>
               )
@@ -265,7 +368,8 @@ export default function Diary({ user }) {
 
         <div className="book-outer">
           <BookView key={selected} date={selected} shifts={selectedShifts}
-                    entry={entries[selected]} suggestions={allTags} onSave={save} />
+                    entry={entries[selected]} suggestions={allTags} onSave={save}
+                    unsavedRef={unsavedRef} />
           {flip > 0 && (
             <div key={flip} className="book-flip" onAnimationEnd={() => setFlip(0)}>
               <div className="book-flip-face book-flip-front" />
@@ -274,6 +378,7 @@ export default function Diary({ user }) {
           )}
         </div>
       </div>
+
     </Frame>
   )
 }

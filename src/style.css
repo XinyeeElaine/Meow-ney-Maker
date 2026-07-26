@@ -715,6 +715,11 @@ h2 {
     font-size: 0.8em;
     cursor: pointer;
 }
+/* Only the mini-calendar's year digits go mono, so they sit even under the grid. */
+.mini-cal .table-sort[aria-label="Year"] {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+}
 .table-sort:disabled { opacity: 0.5; cursor: not-allowed; }
 .table-search { width: 150px; cursor: text; }
 .table-empty { color: var(--text-dim); padding: 18px; }
@@ -1231,6 +1236,33 @@ h2 {
     align-items: center;
     width: calc(100% - 60px);
 }
+/* 1fr | auto | 1fr: the equal outer columns centre the title on the page while
+   the filter button sits hard right on the same row. */
+.diary-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    /* .diary-wrap centres its children, so the row has to claim the width itself
+       or title and button end up side by side in the middle. */
+    width: 100%;
+    margin-bottom: 16px;
+}
+/* A sentence, not a one-word title — smaller so it still fits one line. */
+.diary-head .diary-title {
+    margin-bottom: 0;
+    font-size: 0.85rem;
+}
+.diary-filter-btn {
+    width: auto;
+    margin: 0;
+    padding: 6px 12px;
+    font-size: 0.8em;
+}
+
+.filter-actions { display: flex; gap: 8px; }
+.filter-actions .btn { flex: 1; }
+
 .diary-title { margin-bottom: 16px; }
 .container.diary { max-width: none; width: 100%; }
 
@@ -1314,19 +1346,33 @@ h2 {
     align-self: center;
 }
 
+/* Days that miss the search term — still clickable, just out of the way. */
+.cal-cell.faded { opacity: 0.3; }
+
 .cal-tag {
     padding: 1px 6px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
+    /* Red is the custom-tag colour; each default tag overrides --tag-c below. */
+    --tag-c: #e04a3f;
+    background: color-mix(in srgb, var(--tag-c) 20%, var(--surface-2));
+    border: 1px solid var(--tag-c);
     border-radius: 5px;
     font-family: var(--font-mono);
     font-size: 10px;
-    color: var(--accent);
+    color: var(--tag-c);
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* One colour per default tag. Mid-tones, so they read on the light themes and
+   on midnight alike. */
+.cal-tag.t-work    { --tag-c: #5b8def; }
+.cal-tag.t-play    { --tag-c: #ff6f9c; }
+.cal-tag.t-rest    { --tag-c: #2fb08a; }
+.cal-tag.t-study   { --tag-c: #9a6ae0; }
+.cal-tag.t-family  { --tag-c: #e8862b; }
+.cal-tag.t-special { --tag-c: #d4a017; }
 
 /* Open book: two paper pages sharing a spine. */
 .book-outer {
@@ -1362,20 +1408,46 @@ h2 {
 
 .book-date {
     font-size: 15px;
-    margin: 0 0 14px;
+    /* Rule underneath so the date doesn't run straight into the Work section. */
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+/* Icon and date on one line; nowrap keeps a long date from pushing the icon up. */
+.book-date-line {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 10px;
+    white-space: nowrap;
 }
+.book-weekday { font-size: 0.65em; color: var(--text-dim); }
 
 .book-section { margin-bottom: 18px; }
+
+/* Diary copy of the shift table: same bones, lighter and a size smaller so it
+   sits inside the book page instead of dominating it. */
+.book-section .shift-table {
+    border-width: 2px;
+    box-shadow: 2px 2px 0 var(--shadow);
+    font-size: 0.85em;
+}
+.book-section .shift-table th,
+.book-section .shift-table td { padding: 5px 8px; border-bottom-width: 1px; }
+.book-section .shift-table thead th { font-size: 0.62em; border-bottom-width: 2px; }
 
 .book-total {
     margin-top: 8px;
     font-family: var(--font-mono);
+    font-size: 0.85em;
     color: var(--text-dim);
     text-align: right;
 }
+.book-total strong { color: var(--accent); }
 
 .book-save { width: 100%; }
 
@@ -1436,7 +1508,14 @@ h2 {
     }
 }
 
-.mood-row { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Equal-width columns, so the gaps and both outer edges match whatever the
+   mood count is. minmax(0,…) lets them shrink instead of overflowing. */
+.mood-row {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 8px;
+}
 
 .mood-btn {
     font-size: 26px;
@@ -1457,7 +1536,36 @@ h2 {
 }
 
 /* Tag editor in the drawer */
-.tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+/* One row of equal-width chips, so the gaps and both outer edges match.
+   ponytail: squeezes once several custom tags exist — go back to flex-wrap
+   if that becomes the common case. */
+.tag-row {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.tag-row .tag-chip { justify-content: center; white-space: nowrap; overflow: hidden; }
+
+/* Unsaved edits waiting on the Save button. */
+.book-save.unsaved { outline: 2px solid var(--accent); }
+/* Nothing edited yet — grey it out so Save reads as unavailable, not just idle. */
+.book-save:disabled {
+    background: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text-dim);
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+/* Second row: + Add first, custom tags trailing it at their natural width. */
+.tag-row-custom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
 
 /* Toggleable tag chip: dim until selected, accent when on. */
 .tag-toggle { cursor: pointer; color: var(--text-dim); }
