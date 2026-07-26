@@ -129,21 +129,24 @@ export async function loadDiaryEntries(user) {
   if (!supabase || !user) return {}
   const { data, error } = await supabase
     .from('diary_entries')
-    .select('entry_date, emote, note, tags')
+    .select('entry_date, emote, note, tags, spends')
     .eq('user_id', user.id)
   if (report('Load diary', error)) return {}
   return Object.fromEntries(
-    data.map((e) => [e.entry_date, { emote: e.emote, note: e.note, tags: e.tags || [] }])
+    data.map((e) => [
+      e.entry_date,
+      { emote: e.emote, note: e.note, tags: e.tags || [], spends: e.spends || [] },
+    ])
   )
 }
 
 // Upsert on (user_id, entry_date) so re-saving the same day overwrites, never dupes.
-export async function saveDiaryEntry(user, date, emote, note, tags) {
+export async function saveDiaryEntry(user, date, emote, note, tags, spends) {
   if (!supabase || !user) return
   const { error } = await supabase.from('diary_entries').upsert({
     user_id: user.id,
     entry_date: date,
-    emote, note, tags,
+    emote, note, tags, spends,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id,entry_date' })
   report('Save diary', error)

@@ -53,6 +53,11 @@ function BookView({ date, shifts, entry, suggestions, onSave, unsavedRef }) {
   const [emote, setEmote] = useState(entry?.emote || '')
   const [note, setNote] = useState(entry?.note || '')
   const [tags, setTags] = useState(entry?.tags || [])
+  // [{ label, amount }]. Amounts stay strings while editing so a field can be
+  // empty; they're parsed and clamped on save.
+  const [spends, setSpends] = useState(
+    (entry?.spends || []).map((s) => ({ label: s.label || '', amount: String(s.amount ?? '') }))
+  )
   const [tagInput, setTagInput] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -111,9 +116,23 @@ function BookView({ date, shifts, entry, suggestions, onSave, unsavedRef }) {
   const pretty = day.toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' })
   const weekday = day.toLocaleDateString([], { weekday: 'long' })
 
+  // Never let a negative or NaN amount through, whatever the fields hold.
+  const money = (v) => Math.max(0, Number(v) || 0)
+  const editSpend = (i, field, v) => {
+    setSpends(spends.map((s, j) => (j === i ? { ...s, [field]: v } : s)))
+    dirty()
+  }
+  const addSpend = () => { setSpends([...spends, { label: '', amount: '' }]); dirty() }
+  const delSpend = (i) => { setSpends(spends.filter((_, j) => j !== i)); dirty() }
+  const spentTotal = spends.reduce((sum, s) => sum + money(s.amount), 0)
+
   async function save() {
     setSaving(true)
-    await onSave(date, emote, note, tags)
+    // Rows with neither a name nor an amount are just abandoned blanks.
+    const cleanSpends = spends
+      .filter((s) => s.label.trim() || money(s.amount))
+      .map((s) => ({ label: s.label.trim(), amount: money(s.amount) }))
+    await onSave(date, emote, note, tags, cleanSpends)
     setSaving(false)
     setSaved(true)
     setUnsaved(false)
@@ -159,6 +178,41 @@ function BookView({ date, shifts, entry, suggestions, onSave, unsavedRef }) {
         </section>
 
         <section className="book-section">
+          <div className="section-head"><Pix name="moneybag" /> Spending</div>
+          {/* Reads like a receipt: item on the left, amount right, rule, then the sum. */}
+          <div className="spend-list">
+            {/* Only the rows scroll — the two totals stay pinned at the bottom. */}
+            <div className="spend-scroll">
+              {spends.length === 0 && <p className="dash-note spend-empty">Nothing spent yet.</p>}
+              {spends.map((s, i) => (
+                <div className="spend-row" key={i}>
+                  <input className="spend-label" value={s.label} placeholder="What on…"
+                         aria-label={`Spending ${i + 1} name`}
+                         onChange={(e) => editSpend(i, 'label', e.target.value)} />
+                  <span className="spend-prefix">RM</span>
+                  <input className="spend-amount" type="number" min="0" step="0.01" inputMode="decimal"
+                         value={s.amount} placeholder="0.00" aria-label={`Spending ${i + 1} amount`}
+                         onChange={(e) => editSpend(i, 'amount', e.target.value)} />
+                  <button type="button" className="spend-del" aria-label={`Remove spending ${i + 1}`}
+                          onClick={() => delSpend(i)}>&times;</button>
+                </div>
+              ))}
+            </div>
+            <div className="spend-sum">
+              <span>Spent</span>
+              <span className="spend-sum-val">RM {spentTotal.toFixed(2)}</span>
+            </div>
+            <div className="spend-sum spend-net">
+              <span>Net</span>
+              <span className="spend-sum-val">RM {(total - spentTotal).toFixed(2)}</span>
+            </div>
+          </div>
+          <button type="button" className="tag-chip tag-pick" onClick={addSpend}>+ Add</button>
+        </section>
+      </div>
+
+      <div className="book-page book-page-right">
+        <section className="book-section">
           <div className="section-head"><Pix name="cat" /> Mood</div>
           <div className="mood-row">
             {MOODS.map(([key, emoji]) => (
@@ -169,15 +223,6 @@ function BookView({ date, shifts, entry, suggestions, onSave, unsavedRef }) {
               </button>
             ))}
           </div>
-        </section>
-      </div>
-
-      <div className="book-page book-page-right">
-        <section className="book-section">
-          <div className="section-head"><Pix name="book" /> Note</div>
-          <textarea className="diary-note" rows="8" value={note}
-                    placeholder="Special event, how the day went…"
-                    onChange={(e) => { setNote(e.target.value); dirty() }} />
         </section>
 
         <section className="book-section">
@@ -201,6 +246,14 @@ function BookView({ date, shifts, entry, suggestions, onSave, unsavedRef }) {
               <button className="btn btn-blue">Done</button>
             </form>
           </dialog>
+        </section>
+
+        {/* Grows into whatever the page has left, so the note is the biggest field. */}
+        <section className="book-section note-section">
+          <div className="section-head"><Pix name="book" /> Note</div>
+          <textarea className="diary-note" rows="8" value={note}
+                    placeholder="Special event, how the day went…"
+                    onChange={(e) => { setNote(e.target.value); dirty() }} />
         </section>
 
         <button className={'btn btn-blue book-save' + (unsaved ? ' unsaved' : '')}
@@ -273,9 +326,9 @@ export default function Diary({ user }) {
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ]
 
-  async function save(date, emote, note, tags) {
-    await saveDiaryEntry(user, date, emote, note, tags)
-    setEntries((prev) => ({ ...prev, [date]: { emote, note, tags } }))
+  async function save(date, emote, note, tags, spends) {
+    await saveDiaryEntry(user, date, emote, note, tags, spends)
+    setEntries((prev) => ({ ...prev, [date]: { emote, note, tags, spends } }))
   }
 
   const selectedShifts = selected ? rows.filter((r) => r.date === selected) : []
