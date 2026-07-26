@@ -4,22 +4,13 @@ import Nav from './Nav.jsx'
 import Timer from './Timer.jsx'
 import Dashboard from './Dashboard.jsx'
 import Diary from './Diary.jsx'
+import Todo from './Todo.jsx'
 import Login from './Login.jsx'
 import Profile from './Profile.jsx'
-import { Pix, applyTheme, currentTheme } from './pixel.jsx'
+import { applyTheme, currentTheme } from './pixel.jsx'
 import { supabase } from './supabase.js'
 import { loadPreferences, saveTheme } from './db.js'
 import { showAlert, showPrompt } from './dialog.js'
-
-// Placeholder for the pages that were "Coming soon" stubs in the old site.
-const Soon = ({ title }) => (
-  <div className="container">
-    <h1>{title} <Pix name="chart" /></h1>
-    <p style={{ color: 'var(--text-dim)', margin: '22px 0', fontWeight: 600 }}>
-      <Pix name="cone" /> Coming soon
-    </p>
-  </div>
-)
 
 export default function App() {
   // Theme lives here so both Nav (the picker) and Timer (the cat sprite) see changes.
@@ -90,7 +81,7 @@ export default function App() {
         {/* Same `ready` gate as Timer, so a signed-in user never sees "Log in" flash. */}
         <Route path="/dashboard" element={ready ? <Dashboard user={user} key={user?.id || 'guest'} /> : null} />
         <Route path="/diary" element={ready ? <Diary user={user} key={user?.id || 'guest'} /> : null} />
-        <Route path="/todo" element={<Soon title="To-Do" />} />
+        <Route path="/todo" element={ready ? <Todo user={user} key={user?.id || 'guest'} /> : null} />
       </Routes>
       {loginOpen && (
         <Login onClose={() => setLoginOpen(false)} onAuthed={adoptUser} />

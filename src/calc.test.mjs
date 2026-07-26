@@ -1,6 +1,6 @@
 // Run: node src/calc.test.mjs
 import assert from 'node:assert/strict'
-import { clock, hm, human, monthSeries, ratePerSecond, series, summarize, yearSeries, ymd } from './calc.js'
+import { clock, hm, human, monthSeries, ratePerSecond, series, sortTasks, summarize, yearSeries, ymd } from './calc.js'
 
 // RM1500 over 26 days x 8h = 748800 working seconds.
 const r = ratePerSecond(1500, 8, 26)
@@ -79,5 +79,42 @@ assert.equal(y2026[1].value, 147, 'February bucket sums its shifts')
 assert.equal(y2026[2].value, 15, 'March holds the two 03-02 shifts')
 assert.equal(yearSeries(rows, 2025).find((p) => p.key === '2025-12').value, 3, 'Dec 2025')
 assert.equal(yearSeries(rows, 2024).every((p) => p.value === 0), true, 'a year with no shifts is all zeros')
+
+// --- sortTasks ---------------------------------------------------------
+const t = (over) => ({ done: false, priority: false, due_date: null, created_at: '2026-01-01T00:00:00Z', ...over })
+
+// Open work always outranks finished work, whatever its priority or date.
+const doneFirst = sortTasks([
+  t({ done: true, priority: true, due_date: '2026-01-01' }),
+  t({ id: 'open' }),
+])
+assert.equal(doneFirst[0].id, 'open', 'done never outranks open')
+
+// Priority beats an earlier due date.
+const byPriority = sortTasks([
+  t({ id: 'soon', due_date: '2026-01-02' }),
+  t({ id: 'urgent', priority: true, due_date: '2026-12-31' }),
+])
+assert.equal(byPriority[0].id, 'urgent', 'priority beats due date')
+
+// Within one priority level, the earlier date wins and undated sinks.
+const byDate = sortTasks([
+  t({ id: 'none' }),
+  t({ id: 'late', due_date: '2026-06-01' }),
+  t({ id: 'early', due_date: '2026-02-01' }),
+])
+assert.deepEqual(byDate.map((x) => x.id), ['early', 'late', 'none'], 'undated sinks below dated')
+
+// Same priority, same (absent) date: oldest first.
+const byAge = sortTasks([
+  t({ id: 'new', created_at: '2026-05-05T00:00:00Z' }),
+  t({ id: 'old', created_at: '2026-01-01T00:00:00Z' }),
+])
+assert.deepEqual(byAge.map((x) => x.id), ['old', 'new'], 'oldest created first')
+
+// The input array is left alone — callers hold it in React state.
+const input = [t({ id: 'b', created_at: '2026-09-09T00:00:00Z' }), t({ id: 'a' })]
+sortTasks(input)
+assert.equal(input[0].id, 'b', 'sortTasks does not mutate its argument')
 
 console.log('calc ok')

@@ -11,7 +11,7 @@ const MOODS = [
   ['sleepy', '😴'],
   ['angry', '😾'],
   ['love', '😻'],
-  ['bored', '😼'],
+  ['bored', '😑'],
 ]
 // Entries written before this list changed still store the old keys, so keep
 // their emoji for display only — they're gone from the picker.
@@ -293,11 +293,21 @@ export default function Diary({ user }) {
         okText: 'Discard',
         cancelText: 'Keep editing',
       })
-      if (!discard) return
+      if (!discard) return false
     }
     unsavedRef.current = false
     setSelected(date)
     setFlip((k) => k + 1)   // new key each time so a rapid re-click restarts the animation
+    return true
+  }
+
+  // Jump back after paging away. The calendar only follows if the day actually
+  // changed — "Keep editing" must leave the view where it was.
+  const goToday = async () => {
+    const today = ymd(now)
+    if (today !== selected && !(await pick(today))) return
+    setYear(now.getFullYear())
+    setMonth(now.getMonth())
   }
 
   useEffect(() => {
@@ -369,7 +379,7 @@ export default function Diary({ user }) {
           <div className="filter-actions">
             <button type="button" className="btn"
                     onClick={() => { setMoodFilter(''); setTagFilter('') }}>Clear</button>
-            <button className="btn btn-blue">Done</button>
+            <button className="btn btn-blue">Close</button>
           </div>
         </form>
       </dialog>
@@ -377,22 +387,29 @@ export default function Diary({ user }) {
       <div className="diary-cols">
         <div className="mini-cal">
           <div className="cal-head">
-            <button className="pager-btn" onClick={() => step(-1)} aria-label="Previous month">‹</button>
-            <select className="table-sort" value={month} aria-label="Month"
-                    onChange={(e) => setMonth(+e.target.value)}>
-              {MONTH_NAMES.map((m, i) => <option key={i} value={i}>{m}</option>)}
-            </select>
-            <select className="table-sort" value={year} aria-label="Year"
-                    onChange={(e) => setYear(+e.target.value)}>
-              {/* Current year always first, then ten ahead, plus the pager's year
-                  if it stepped outside that window. */}
-              {[...new Set([
-                now.getFullYear(),
-                ...Array.from({ length: 10 }, (_, i) => now.getFullYear() + i + 1),
-                year,
-              ])].map((y) => <option key={y} value={y}>{y}</option>)}
-            </select>
-            <button className="pager-btn" onClick={() => step(1)} aria-label="Next month">›</button>
+            <button className="link-accent link-btn today-link" onClick={goToday}
+                    disabled={selected === ymd(now) && year === now.getFullYear() && month === now.getMonth()}>
+              Today
+            </button>
+            {/* Grouped so the whole chooser is one grid item and stays centred. */}
+            <div className="cal-nav">
+              <button className="pager-btn" onClick={() => step(-1)} aria-label="Previous month">‹</button>
+              <select className="table-sort" value={month} aria-label="Month"
+                      onChange={(e) => setMonth(+e.target.value)}>
+                {MONTH_NAMES.map((m, i) => <option key={i} value={i}>{m}</option>)}
+              </select>
+              <select className="table-sort" value={year} aria-label="Year"
+                      onChange={(e) => setYear(+e.target.value)}>
+                {/* Current year always first, then ten ahead, plus the pager's year
+                    if it stepped outside that window. */}
+                {[...new Set([
+                  now.getFullYear(),
+                  ...Array.from({ length: 10 }, (_, i) => now.getFullYear() + i + 1),
+                  year,
+                ])].map((y) => <option key={y} value={y}>{y}</option>)}
+              </select>
+              <button className="pager-btn" onClick={() => step(1)} aria-label="Next month">›</button>
+            </div>
           </div>
 
           <div className="cal-grid">

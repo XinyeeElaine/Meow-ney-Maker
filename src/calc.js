@@ -107,3 +107,17 @@ export function yearSeries(rows, year) {
     return { key, label, value: totals.get(key) || 0 }
   })
 }
+
+// Task order inside one category: open work first, then what's urgent, then
+// what's due soonest. Undated tasks sink below dated ones rather than sorting
+// as "no date = very early". Returns a new array; callers hold the input in
+// React state, where mutating in place would skip a re-render.
+export function sortTasks(tasks) {
+  const dueRank = (t) => (t.due_date ? t.due_date : '9999-12-31')
+  return [...tasks].sort((a, b) =>
+    (a.done - b.done) ||
+    (b.priority - a.priority) ||
+    dueRank(a).localeCompare(dueRank(b)) ||
+    String(a.created_at).localeCompare(String(b.created_at))
+  )
+}

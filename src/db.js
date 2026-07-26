@@ -151,3 +151,70 @@ export async function saveDiaryEntry(user, date, emote, note, tags, spends) {
   }, { onConflict: 'user_id,entry_date' })
   report('Save diary', error)
 }
+
+// To-Do: categories and their tasks. Two tables rather than a category string
+// on each task, so a freshly made empty list survives a reload.
+export async function loadTodoData(user) {
+  // ok distinguishes "really empty" from "failed to load" — a caller that can't
+  // tell the two apart ends up wiping good state on a network hiccup.
+  if (!supabase || !user) return { ok: false, categories: [], todos: [] }
+  const [cats, todos] = await Promise.all([
+    supabase.from('todo_categories').select('*').eq('user_id', user.id)
+      .order('position').order('created_at'),
+    supabase.from('todos').select('*').eq('user_id', user.id),
+  ])
+  if (report('Load lists', cats.error) || report('Load tasks', todos.error)) {
+    return { ok: false, categories: [], todos: [] }
+  }
+  // Task order is computed client-side by sortTasks, so no .order() here.
+  return { ok: true, categories: cats.data, todos: todos.data }
+}
+
+// Returns the inserted row: the caller needs the generated id to attach tasks
+// to the new category without a refetch.
+export async function addCategory(user, name, position) {
+  if (!supabase || !user) return null
+  const { data, error } = await supabase.from('todo_categories')
+    .insert({ user_id: user.id, name, position })
+    .select()
+    .single()
+  if (report('Add list', error)) return null
+  return data
+}
+
+// Rename, recolour: same patch shape as updateTodo.
+export async function updateCategory(id, patch) {
+  if (!supabase) return false
+  const { error } = await supabase.from('todo_categories').update(patch).eq('id', id)
+  return !report('Update list', error)
+}
+
+// The tasks go with it — that's the on-delete-cascade on todos.category_id.
+export async function deleteCategory(id) {
+  if (!supabase) return false
+  const { error } = await supabase.from('todo_categories').delete().eq('id', id)
+  return !report('Delete list', error)
+}
+
+export async function addTodo(user, categoryId, text, color = 'lilac') {
+  if (!supabase || !user) return null
+  const { data, error } = await supabase.from('todos')
+    .insert({ user_id: user.id, category_id: categoryId, text, color })
+    .select()
+    .single()
+  if (report('Add task', error)) return null
+  return data
+}
+
+// One patch function instead of four setters: every edit is the same update.
+export async function updateTodo(id, patch) {
+  if (!supabase) return false
+  const { error } = await supabase.from('todos').update(patch).eq('id', id)
+  return !report('Update task', error)
+}
+
+export async function deleteTodo(id) {
+  if (!supabase) return false
+  const { error } = await supabase.from('todos').delete().eq('id', id)
+  return !report('Delete task', error)
+}
