@@ -82,6 +82,11 @@ function Category({ cat, tasks, onAddTask, onPatch, onDelTask }) {
   const open = sorted.filter((t) => !t.done)
   const done = sorted.filter((t) => t.done)
 
+  // The finished view with nothing left in it: reachable by ticking the last
+  // task back open, or deleting it. It needs its own line and its own way out,
+  // or the board is a blank page with no button on it.
+  const emptyDone = showDone && done.length === 0
+
   const submit = async (e) => {
     e.preventDefault()
     const text = draft.trim()
@@ -174,8 +179,9 @@ function Category({ cat, tasks, onAddTask, onPatch, onDelTask }) {
           <span className="todo-count">{pct}%</span>
         </div>
 
-        {/* Right edge, so it holds still while the numbers change width. */}
-        {done.length > 0 && (
+        {/* Right edge, so it holds still while the numbers change width. The
+            finished view keeps the button even at zero — it's the way back. */}
+        {(done.length > 0 || showDone) && (
           <button type="button" className="range-tab todo-done-toggle"
                   onClick={() => setShowDone(!showDone)}>
             {showDone ? 'Hide finished' : 'Show finished'}
@@ -212,6 +218,16 @@ function Category({ cat, tasks, onAddTask, onPatch, onDelTask }) {
 
         {(showDone ? done : open).map(card)}
       </div>
+
+      {/* Outside .todo-cards: in that grid it would be squeezed into one 210px
+          column instead of running the width of the board. */}
+      {emptyDone && (
+        <p className="todo-blank">
+          Nothing finished in {cat.name} yet — tick a task off and it lands here.{' '}
+          <button type="button" className="link-accent link-btn"
+                  onClick={() => setShowDone(false)}>Back to tasks</button>
+        </p>
+      )}
     </section>
   )
 }
