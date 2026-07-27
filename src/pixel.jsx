@@ -54,6 +54,8 @@ const ICONS = {
   search:   [".ccc....","c...c...","c...c...",".ccc....","....c...",".....c..","......c.","........"],
   // Funnel: wide mouth narrowing to a stem.
   filter:   ["cccccccc",".cccccc.","..cccc..","...cc...","...cc...","...cc...","...cc...","........"],
+  gear:     ["..c..c..",".cccccc.",".cccccc.","ccc..ccc","ccc..ccc",".cccccc.",".cccccc.","..c..c.."],
+  trash:    ["..cccc..","cccccccc",".cccccc.",".c.cc.c.",".c.cc.c.",".c.cc.c.",".cccccc.","..cccc.."],
 }
 
 export function iconSvg(name) {

@@ -1,28 +1,43 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pix } from './pixel.jsx'
 import { sortTasks } from './calc.js'
-import { showAlert, showConfirm, showPrompt } from './dialog.js'
+import { showAlert, showPrompt, showToast, TOAST_MS } from './dialog.js'
 import {
   loadTodoData, addCategory, updateCategory, deleteCategory,
   addTodo, updateTodo, deleteTodo,
 } from './db.js'
 
-// Pinning is for the handful of lists you live in — past three it stops being
+
 // a shortlist and the tab strip is back to where it started.
 const PIN_LIMIT = 3
 
-// Card colours are stored as palette keys, so the shades can change without a
-// migration. Fixed hexes rather than theme variables: a task's colour is the
-// user's choice and should not shift when they switch theme.
+
+// Rainbow order, with the neutral parked at the end.
 const COLORS = [
-  ['lilac', '#a37cb2'],
-  ['blue', '#5b8def'],
-  ['green', '#2fb08a'],
-  ['amber', '#e8a33d'],
-  ['rose', '#e0607f'],
-  ['slate', '#7b8794'],
+  ['rose', '#e35d72'],
+  ['pink', '#f2789f'],
+  ['gold', '#ffc24b'],
+  ['teal', '#3fb8ad'],
+  ['blue', '#4fa8e8'],
+  ['navy', '#3f63c4'],
+  ['purple', '#9b6fd4'],
+  ['cream', '#f0dcae'],
 ]
-const colorOf = (key) => (COLORS.find(([k]) => k === key) || COLORS[0])[1]
+// Keys live on the row, so every palette this board has had leaves rows behind.
+// Without this map they'd all fall back to one colour and the board would look
+// as if picking a colour did nothing.
+const LEGACY = {
+  lilac: 'purple',
+  green: 'teal', mint: 'teal',
+  slate: 'navy', sky: 'blue',
+  amber: 'gold', sand: 'cream',
+  orange: 'gold', peach: 'gold', brown: 'gold',
+  red: 'rose', coral: 'rose',
+}
+const colorOf = (key) => {
+  const want = LEGACY[key] || key
+  return (COLORS.find(([k]) => k === want) || COLORS[0])[1]
+}
 
 // No .container wrapper: the board runs the width of the screen and the only
 // boxed things on it are the task cards.
@@ -60,7 +75,7 @@ const ColorPick = ({ value, onPick, label }) => (
 // One category: its tasks, the add field, and the done toggle.
 function Category({ cat, tasks, onAddTask, onPatch, onDelTask }) {
   const [draft, setDraft] = useState('')
-  const [newColor, setNewColor] = useState('lilac')
+  const [newColor, setNewColor] = useState(COLORS[0][0])
   const [showDone, setShowDone] = useState(false)
 
   const sorted = sortTasks(tasks)
@@ -86,7 +101,9 @@ function Category({ cat, tasks, onAddTask, onPatch, onDelTask }) {
         <div className="todo-task-marks">
           <button type="button" className={'todo-star' + (t.priority ? ' on' : '')}
                   aria-label={`Favourite: ${t.text}`} aria-pressed={t.priority}
-                  onClick={() => onPatch(t.id, { priority: !t.priority })}>★</button>
+                  onClick={() => onPatch(t.id, { priority: !t.priority })}>
+            {t.priority ? '★' : '☆'}
+          </button>
         </div>
 
         <span className="todo-made">{made(t.created_at)}</span>
@@ -236,25 +253,45 @@ export default function Todo({ user }) {
   if (!ready) return <Frame><p className="dash-note">Loading…</p></Frame>
 
   async function newList() {
-    const name = (await showPrompt('Name this list'))?.trim()
+    const name = (await showPrompt(
+      'What should this list hold? Give it a name — Study, Home, Work, whatever fits.',
+      { cat: 'happy', placeholder: 'e.g. Study' },
+    ))?.trim()
     if (!name) return
     const row = await addCategory(user, name, cats.length)
     // Open the new list straight away — making one is a statement of intent.
-    if (row) { setCats((prev) => [...prev, row]); setActiveId(row.id) }
+    if (row) {
+      setCats((prev) => [...prev, row])
+      setActiveId(row.id)
+      showToast(`List "${row.name}" created!`)
+    }
   }
 
-  async function delCat(cat) {
-    if (!await showConfirm(`Delete "${cat.name}" and everything in it?`)) return
+
+  function delCat(cat) {
     settingsRef.current?.close()
-    setCats((prev) => prev.filter((c) => c.id !== cat.id))
-    setTasks((prev) => prev.filter((t) => t.category_id !== cat.id))
-    if (!await deleteCategory(cat.id)) await refetch()
+    const prevCats = cats
+    const prevTasks = tasks
+    setCats(prevCats.filter((c) => c.id !== cat.id))
+    setTasks(prevTasks.filter((t) => t.category_id !== cat.id))
+
+    let undone = false
+    showToast(`Deleted "${cat.name}"`, {
+      label: 'Undo',
+      onClick: () => { undone = true; setCats(prevCats); setTasks(prevTasks); setActiveId(cat.id) },
+    })
+    setTimeout(async () => {
+      if (undone) return
+      if (!await deleteCategory(cat.id)) await refetch()
+    }, TOAST_MS)
   }
 
   // Rename and recolour share one path: both are a patch on the category row.
   async function patchCat(id, fields) {
     setCats((prev) => prev.map((c) => (c.id === id ? { ...c, ...fields } : c)))
-    if (!await updateCategory(id, fields)) await refetch()
+    if (await updateCategory(id, fields)) return true
+    await refetch()
+    return false
   }
 
   function openSettings() {
@@ -304,15 +341,10 @@ export default function Todo({ user }) {
 
   return (
     <Frame action={newListBtn}>
+      {/* No lists: a line in the middle of the board, with the header's New list
+          button as the only way out. .dash-note is already centred in .todo-wrap. */}
       {cats.length === 0
-        ? (
-          <div className="todo-empty">
-            <p className="dash-note">No lists yet. Make one — Study, Home, Errands, whatever.</p>
-            <button className="btn btn-blue" onClick={newList}>
-              <Pix name="star" /> New list
-            </button>
-          </div>
-        )
+        ? <p className="dash-note">No lists yet — start one with New list.</p>
         : (
           <>
           {/* One tab per list; only the open one's tasks are rendered. */}
@@ -332,7 +364,7 @@ export default function Todo({ user }) {
             <button type="button" className="range-tab todo-settings-btn"
                     aria-label={`Settings for ${active.name}`} title="List settings"
                     onClick={openSettings}>
-              <Pix name="settings" />
+              <Pix name="gear" />
             </button>
           </div>
 
@@ -343,11 +375,16 @@ export default function Todo({ user }) {
           {/* Same <dialog> shell as the diary's pickers. Name commits on submit;
               colour applies on click so the choice is visible immediately. */}
           <dialog ref={settingsRef} className="tag-dialog todo-settings">
-            <form method="dialog" onSubmit={() => {
+            <form method="dialog" onSubmit={async () => {
               const name = nameDraft.trim()
-              if (name && name !== active.name) patchCat(active.id, { name })
+              if (!name || name === active.name) return
+              if (await patchCat(active.id, { name })) showToast('List saved!')
             }}>
-              <div className="section-head">List settings</div>
+              <div className="todo-set-head">
+                <span className="section-head">List settings</span>
+                <button type="button" className="todo-set-x" aria-label="Close"
+                        onClick={() => settingsRef.current.close()}>×</button>
+              </div>
 
               <label className="todo-field">
                 <span>Name</span>
@@ -355,23 +392,31 @@ export default function Todo({ user }) {
                        onChange={(e) => setNameDraft(e.target.value)} />
               </label>
 
-              {/* type="button": pinning applies straight away, it must not submit
-                  and close the dialog the way Save does. */}
-              <div className="todo-field">
-                <span>Order</span>
+              {/* Pin and Delete act on click; only Name waits for Save, so they
+                  sit in their own rows below the field rather than in a button bar. */}
+              <div className="todo-set-row">
+                <div className="todo-set-label">
+                  Keep this list first
+                  <small className="todo-hint">{pinnedCount} of {PIN_LIMIT} pinned</small>
+                </div>
                 <button type="button" aria-pressed={!!active.pinned}
                         className={'range-tab todo-pin' + (active.pinned ? ' active' : '')}
                         onClick={togglePin}>
-                  {active.pinned ? 'Pinned to front' : 'Pin to front'}
+                  {active.pinned ? 'Unpin' : 'Pin'}
                 </button>
-                <small className="todo-hint">{pinnedCount} of {PIN_LIMIT} pinned</small>
               </div>
 
-              <div className="filter-actions">
-                <button type="button" className="btn btn-danger"
-                        onClick={() => delCat(active)}>Delete list</button>
-                <button className="btn btn-blue">Save</button>
+              <div className="todo-set-row">
+                <div className="todo-set-label">
+                  Delete
+                  <small className="todo-hint">Removes this list and every task in it</small>
+                </div>
+                <button type="button" className="btn btn-danger todo-set-del"
+                        aria-label={`Delete ${active.name}`} title="Delete list"
+                        onClick={() => delCat(active)}><Pix name="trash" /></button>
               </div>
+
+              <button className="btn btn-blue todo-set-save">Save</button>
             </form>
           </dialog>
           </>

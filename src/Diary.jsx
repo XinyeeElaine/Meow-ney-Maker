@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Pix } from './pixel.jsx'
 import { MONTH_NAMES, hm, pad, ymd } from './calc.js'
 import { loadWorkSessions, loadDiaryEntries, saveDiaryEntry } from './db.js'
-import { showDialog } from './dialog.js'
+import { showDialog, showToast } from './dialog.js'
 
 // Cat moods, on theme. Key is what's stored; emoji is only ever for display.
 const MOODS = [
@@ -337,8 +337,10 @@ export default function Diary({ user }) {
   ]
 
   async function save(date, emote, note, tags, spends) {
-    await saveDiaryEntry(user, date, emote, note, tags, spends)
+    const ok = await saveDiaryEntry(user, date, emote, note, tags, spends)
     setEntries((prev) => ({ ...prev, [date]: { emote, note, tags, spends } }))
+    // Only on a real write: a failed one already put its own error dialog up.
+    if (ok) showToast('Diary saved!')
   }
 
   const selectedShifts = selected ? rows.filter((r) => r.date === selected) : []

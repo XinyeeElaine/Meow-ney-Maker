@@ -1068,6 +1068,25 @@ h2 {
     animation: toastPop 2.6s ease forwards;
 }
 
+/* The toast itself ignores the mouse; a toast with a button has to take it back. */
+.toast-with-action { pointer-events: auto; }
+.toast-action {
+    margin-left: 10px;
+    padding: 5px 12px;
+    background: var(--accent);
+    color: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    box-shadow: 3px 3px 0 var(--shadow);
+    font-family: var(--font-pixel);
+    font-size: 0.6em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+.toast-action:hover { background: var(--accent-2); }
+.toast-action:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shadow); }
+
 @keyframes toastPop {
     0%       { opacity: 0; transform: translate(-50%, 16px); }
     10%, 85% { opacity: 1; transform: translate(-50%, 0); }
@@ -1468,15 +1487,39 @@ h2 {
     padding: 8px 10px;
     margin-bottom: 8px;
 }
-/* Four rows tall, then it scrolls — the book page keeps its height either way. */
-.spend-scroll { max-height: 120px; overflow-y: auto; }
+/* Four rows tall, then it scrolls — the book page keeps its height either way.
+   padding-right keeps the bar off the × buttons. */
+.spend-scroll {
+    max-height: 148px;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+/* Chunky square thumb to match the pixel furniture. WebKit ignores the two
+   standard properties, so both spellings are here. */
+.spend-scroll,
+.history-list {
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) transparent;
+}
+.spend-scroll::-webkit-scrollbar,
+.history-list::-webkit-scrollbar { width: 8px; }
+.spend-scroll::-webkit-scrollbar-track,
+.history-list::-webkit-scrollbar-track { background: transparent; }
+.spend-scroll::-webkit-scrollbar-thumb,
+.history-list::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border: 2px solid var(--surface-2);
+    border-radius: 2px;
+}
+.spend-scroll::-webkit-scrollbar-thumb:hover,
+.history-list::-webkit-scrollbar-thumb:hover { background: var(--accent-2); }
 .spend-empty { padding: 2px 0 6px; font-size: 0.85em; }
 
 .spend-row {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 3px 0;
+    padding: 7px 0;
     border-bottom: 1px dashed var(--border);
 }
 .spend-row input {
@@ -1488,10 +1531,16 @@ h2 {
     font-size: 0.85em;
 }
 .spend-row input:focus { outline: none; background: color-mix(in srgb, var(--accent) 14%, transparent); }
+/* The label is the only free-text field in the row — it gets the slack the
+   fixed-width amount and the currency tag don't need. */
 .spend-label { flex: 1; min-width: 0; }
-.spend-prefix { font-family: var(--font-mono); font-size: 0.8em; color: var(--text-dim); }
+.spend-prefix { font-family: var(--font-mono); font-size: 0.62em; color: var(--text-dim); }
 .spend-amount {
-    flex: 0 0 74px;
+    /* Fits "1234.56" at this size — narrower starts clipping real amounts.
+       min-width: 0 or the input's intrinsic width wins and the basis is ignored. */
+    flex: 0 0 68px;
+    min-width: 0;
+    font-size: 0.8em;
     text-align: right;
     font-variant-numeric: tabular-nums;
 }
@@ -1503,7 +1552,7 @@ h2 {
 .spend-del {
     background: none;
     border: none;
-    padding: 0 4px;
+    padding: 0 2px;
     color: var(--text-dim);
     font-size: 14px;
     line-height: 1;
@@ -1749,6 +1798,9 @@ h2 {
        forty tasks, none, or a "Log in" line. */
     min-height: 560px;
     text-align: left;
+    /* body centres its children; pin the board to the top so the title sits
+       just under the nav instead of floating down the page. */
+    align-self: flex-start;
 }
 .todo-wrap > .dash-note { margin: auto; text-align: center; }
 
@@ -1761,7 +1813,14 @@ h2 {
     margin-bottom: 18px;
     border-bottom: 2px solid var(--border);
 }
-.todo-tab { display: inline-flex; align-items: center; gap: 7px; }
+/* Same mono as the task text — list names are user-typed too. */
+.todo-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-mono);
+    font-size: 0.75em;
+}
 /* Open count rides inside the tab, hidden at zero so a cleared list reads as
    cleared without opening it. */
 .todo-tab-count {
@@ -1868,12 +1927,14 @@ h2 {
     cursor: pointer;
 }
 
+/* Unstarred is a hollow ☆ in the card's own colour — visible enough to invite a
+   click, still plainly not the gold filled one. */
 .todo-star {
     background: none;
     border: none;
     padding: 0;
-    color: var(--border);
-    font-size: 15px;
+    color: var(--text);
+    font-size: 17px;
     line-height: 1;
     cursor: pointer;
 }
@@ -1893,9 +1954,11 @@ textarea.todo-text {
     resize: none;
     overflow: auto;
     color: inherit;
-    font-family: var(--font-body);
-    font-size: 0.88em;
-    line-height: 1.35;
+    /* Mono: task titles are the one place on the page with long, arbitrary text,
+       and it stays legible where the pixel body font gets mushy. */
+    font-family: var(--font-mono);
+    font-size: 0.78em;
+    line-height: 1.4;
 }
 textarea.todo-text:focus {
     outline: none;
@@ -1907,18 +1970,6 @@ textarea.todo-text:focus {
 .todo-done-toggle { flex-shrink: 0; }
 
 /* Nothing to show yet: say so and hand over the button in the same breath. */
-.todo-empty {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    padding: 40px 20px;
-    text-align: center;
-}
-.todo-empty .btn { width: auto; margin: 0; }
-
 /* Settings sits at the far right of the tab strip, apart from the list tabs. */
 .todo-settings-btn { margin-left: auto; display: inline-flex; align-items: center; }
 .todo-settings-btn .pix { width: 1em; height: 1em; }
@@ -1931,8 +1982,61 @@ textarea.todo-text:focus {
     color: var(--text-dim);
 }
 
-/* Per-list colour rides in on --card-c, set inline from the category's palette key. */
-.todo-task { border-color: var(--card-c, var(--border)); }
+.todo-settings form { min-width: min(420px, 82vw); gap: 14px; }
+
+/* Title centred on the row; the close button is taken out of flow so its width
+   doesn't push the title off centre. */
+.todo-set-head {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+}
+.todo-set-head .section-head { margin-bottom: 0; }
+.todo-set-x {
+    position: absolute;
+    right: 0;
+    padding: 0 6px;
+    background: none;
+    color: var(--text-dim);
+    border: 0;
+    font-family: var(--font-body);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.todo-set-x:hover { color: var(--text); }
+
+/* One action per row: what it does on the left, the control on the right. */
+.todo-set-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding-top: 12px;
+    border-top: 2px dashed var(--border);
+}
+.todo-set-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.85em;
+    color: var(--text-dim);
+}
+.todo-set-row .btn { width: auto; margin: 0; padding: 6px 12px; font-size: 0.8em; }
+/* Icon-only: square padding, and the glyph carries the button's text colour. */
+.todo-set-del { padding: 7px 9px; display: inline-flex; }
+.todo-set-del .pix { width: 1.1em; height: 1.1em; }
+.todo-set-save { width: 100%; margin: 4px 0 0; }
+
+/* Per-list colour rides in on --card-c, set inline from the category's palette
+   key. A border alone barely reads at 3px, so the card body carries a wash of
+   it too — that's what makes one colour tell from another across the board. */
+.todo-task {
+    border-color: var(--card-c, var(--border));
+    background: color-mix(in srgb, var(--card-c, var(--surface-2)) 30%, var(--surface-2));
+}
 
 
 
@@ -1961,35 +2065,41 @@ textarea.todo-text:focus {
 /* <details> holds the open state; the summary IS the current-colour swatch. */
 .todo-color { position: relative; }
 .todo-color > summary {
-    width: 14px;
-    height: 14px;
+    width: 20px;
+    height: 20px;
     border: 2px solid var(--border);
-    border-radius: 4px;
+    border-radius: 5px;
+    box-shadow: 2px 2px 0 var(--shadow);
     cursor: pointer;
     list-style: none;
 }
 .todo-color > summary::-webkit-details-marker { display: none; }
+.todo-color[open] > summary { box-shadow: 0 0 0 2px var(--accent); }
+/* Rows of four: the full strip overhangs a 210px card. */
 .todo-color-pop {
     position: absolute;
     right: 0;
     z-index: 5;
-    display: flex;
-    gap: 5px;
-    margin-top: 5px;
-    padding: 6px;
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    gap: 7px;
+    margin-top: 7px;
+    padding: 9px;
     background: var(--surface);
-    border: 2px solid var(--border);
-    border-radius: 6px;
-    box-shadow: 3px 3px 0 var(--shadow);
+    border: 3px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 4px 4px 0 var(--shadow);
 }
 .todo-dot {
-    width: 15px;
-    height: 15px;
+    width: 22px;
+    height: 22px;
     border: 2px solid var(--border);
-    border-radius: 4px;
+    border-radius: 5px;
     cursor: pointer;
 }
-.todo-dot.on { border-color: var(--text); }
+.todo-dot:hover { transform: translate(-1px, -1px); }
+/* Ring outside the swatch, so the colour itself stays unobscured. */
+.todo-dot.on { box-shadow: 0 0 0 2px var(--text); }
 
 /* The blank card is the real card minus its task controls. */
 .todo-new { border-style: dashed; }
@@ -2010,7 +2120,6 @@ textarea.todo-text:focus {
 
 /* Pinned tabs lead the strip; the marker says why they jumped the queue. */
 .todo-tab.pinned::before { content: '📌'; font-size: 0.85em; }
-.todo-pin { align-self: flex-start; }
 .todo-hint { font-family: var(--font-mono); font-size: 0.9em; color: var(--text-dim); }
 
 /* Finished stamp, centred along the card's bottom edge. */

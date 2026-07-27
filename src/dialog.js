@@ -158,11 +158,23 @@ export function showDialog({ title = '', message = '', input = null, okText = 'O
 }
 
 // Non-blocking confirmation: nothing to await, the CSS animation removes it.
-export function showToast(message) {
+// `action` is an optional { label, onClick } — an Undo button inside the toast.
+export const TOAST_MS = 2600            // must match the toastPop animation
+
+export function showToast(message, action) {
   const el = document.createElement('div')
   el.className = 'toast'
   el.setAttribute('role', 'status')       // announced without stealing focus
   el.textContent = message
+  if (action) {
+    el.classList.add('toast-with-action')
+    const btn = document.createElement('button')
+    btn.type = 'button'
+    btn.className = 'toast-action'
+    btn.textContent = action.label
+    btn.onclick = () => { el.remove(); action.onClick() }
+    el.append(' ', btn)
+  }
   el.onanimationend = () => el.remove()
   document.body.appendChild(el)
 }
@@ -172,7 +184,7 @@ export const showConfirm = (message, title = '') =>
   showDialog({ title, message, cat: true, okText: 'Yes', cancelText: 'Cancel' })
 export const showPrompt = (message, opts = {}) =>
   showDialog({
-    message, cat: true,
+    message, cat: opts.cat || true,
     input: { type: opts.type || 'text', placeholder: opts.placeholder || '' },
     okText: 'OK', cancelText: 'Cancel',
   })

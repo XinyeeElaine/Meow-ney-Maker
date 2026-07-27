@@ -149,7 +149,7 @@ export async function saveDiaryEntry(user, date, emote, note, tags, spends) {
     emote, note, tags, spends,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'user_id,entry_date' })
-  report('Save diary', error)
+  return !report('Save diary', error)
 }
 
 // To-Do: categories and their tasks. Two tables rather than a category string
@@ -196,7 +196,7 @@ export async function deleteCategory(id) {
   return !report('Delete list', error)
 }
 
-export async function addTodo(user, categoryId, text, color = 'lilac') {
+export async function addTodo(user, categoryId, text, color = 'cream') {
   if (!supabase || !user) return null
   const { data, error } = await supabase.from('todos')
     .insert({ user_id: user.id, category_id: categoryId, text, color })
